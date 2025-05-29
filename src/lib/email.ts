@@ -7,7 +7,9 @@ interface EmailData {
   body: string;
 }
 
-export const sendEmail = async (data: EmailData) => {
+export const sendEmail = async (
+  data: EmailData,
+): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   try {
     // In a real implementation, this would call an email service API
     console.log("Sending email to:", data.to);
@@ -32,7 +34,7 @@ export const sendSellerInstructions = async (
   sellerEmail: string,
   buyerName: string,
   eventName: string,
-) => {
+): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   return sendEmail({
     to: sellerEmail,
     subject: `HoldMyTix: Instructions for transferring your ${eventName} ticket`,
@@ -64,7 +66,7 @@ export const sendBuyerInstructions = async (
   sellerName: string,
   eventName: string,
   amount: number,
-) => {
+): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   return sendEmail({
     to: buyerEmail,
     subject: `HoldMyTix: Payment instructions for ${eventName} ticket`,
@@ -95,7 +97,7 @@ export const sendAdminNotification = async (
   eventName: string,
   sellerEmail: string,
   buyerEmail: string,
-) => {
+): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   return sendEmail({
     to: "mishaberman@gmail.com",
     subject: `New HoldMyTix Transfer: ${eventName}`,

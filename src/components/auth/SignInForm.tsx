@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Shield } from "lucide-react";
+import { Shield, Info, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +22,15 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -38,7 +44,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 const SignInForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -49,18 +58,49 @@ const SignInForm = () => {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log("Sign in data:", data);
-    // In a real app, you would authenticate with a backend here
-    // For now, we'll just simulate a successful login
-    navigate("/marketplace");
+  // Get return URL from location state or default to dashboard
+  const returnTo = location.state?.returnTo || "/dashboard";
+
+  const onSubmit = async (data: FormValues) => {
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await loginWithRedirect({
+        authorizationParams: {
+          screen_hint: "login",
+          login_hint: data.email,
+          connection: "Username-Password-Authentication",
+        },
+        appState: {
+          returnTo,
+          email: data.email,
+          rememberMe: data.rememberMe,
+        },
+      });
+      // Auth0 will handle the redirect
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(
+        err?.message ||
+          "Failed to sign in. Please check your credentials and try again.",
+      );
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAuth0Login = () => {
+    loginWithRedirect({
+      appState: { returnTo },
+    });
   };
 
   if (isLoading) {
     return (
       <Card className="w-full max-w-md mx-auto bg-white">
         <CardContent className="pt-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <span className="ml-2">Checking authentication status...</span>
         </CardContent>
       </Card>
     );
@@ -97,15 +137,32 @@ const SignInForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <Button
-            className="w-full flex items-center justify-center gap-2"
-            onClick={() => loginWithRedirect()}
-          >
-            <Shield className="h-4 w-4" />
-            Sign in with Auth0
-          </Button>
-        </div>
+        <Alert className="mb-6 bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">What is Auth0?</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            Auth0 is a trusted authentication service that securely handles your
+            login. We use Auth0 to protect your account with enterprise-grade
+            security. Your credentials are never stored on our servers.
+          </AlertDescription>
+        </Alert>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="w-full flex items-center justify-center gap-2 mb-6"
+                onClick={handleAuth0Login}
+              >
+                <Shield className="h-4 w-4" />
+                Sign in with Auth0
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Secure, enterprise-grade authentication</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
@@ -117,6 +174,31 @@ const SignInForm = () => {
             </span>
           </div>
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>
+              {error}
+              <div className="mt-2 flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/sign-up")}
+                >
+                  Create an account
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Forgot password?
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -178,8 +260,15 @@ const SignInForm = () => {
                 Forgot password?
               </a>
             </div>
-            <Button type="submit" className="w-full">
-              Sign In
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In with Email"
+              )}
             </Button>
           </form>
         </Form>

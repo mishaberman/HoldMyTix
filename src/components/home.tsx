@@ -29,7 +29,10 @@ const Home = () => {
               to="/marketplace"
               className="text-sm font-medium hover:text-primary"
             >
-              Marketplace
+              Marketplace{" "}
+              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
+                Coming Soon
+              </span>
             </Link>
             <Link
               to="/how-it-works"
@@ -57,6 +60,13 @@ const Home = () => {
             </Button>
             <Button size="sm" onClick={() => navigate("/sign-up")}>
               Get Started
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate("/single-ticket-transfer")}
+            >
+              Single Transfer
             </Button>
           </div>
         </div>
@@ -88,7 +98,11 @@ const Home = () => {
                 className="gap-2"
                 onClick={() => navigate("/marketplace")}
               >
-                Buy Tickets <ArrowRight className="h-4 w-4" />
+                Browse Tickets{" "}
+                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
+                  Coming Soon
+                </span>{" "}
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -254,7 +268,11 @@ const Home = () => {
               className="bg-transparent border-primary-foreground hover:bg-primary-foreground/10 gap-2"
               onClick={() => navigate("/marketplace")}
             >
-              Browse Tickets <ArrowRight className="h-4 w-4" />
+              Browse Tickets{" "}
+              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
+                Coming Soon
+              </span>{" "}
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -290,7 +308,10 @@ const Home = () => {
                     to="/marketplace"
                     className="text-muted-foreground hover:text-primary"
                   >
-                    Marketplace
+                    Marketplace{" "}
+                    <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
+                      Coming Soon
+                    </span>
                   </Link>
                 </li>
                 <li>

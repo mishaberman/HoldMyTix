@@ -23,7 +23,7 @@ interface TransferAgreementData {
 // In a real application, you would use the DocuSign SDK to create and send agreements
 export const generateTransferAgreement = async (
   data: TransferAgreementData,
-) => {
+): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
     // In a real implementation, this would use the DocuSign SDK to create an envelope
     // and send it to both parties for signing
@@ -54,7 +54,9 @@ export const generateTransferAgreement = async (
 };
 
 // In a real implementation, this would use the DocuSign API to get the status of an envelope
-export const getAgreementStatus = async (envelopeId: string) => {
+export const getAgreementStatus = async (
+  envelopeId: string,
+): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
     // Mock response
     return {

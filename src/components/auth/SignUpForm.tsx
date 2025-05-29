@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +22,10 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z
   .object({
@@ -44,6 +48,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
   const navigate = useNavigate();
+  const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -56,12 +63,66 @@ const SignUpForm = () => {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log("Sign up data:", data);
-    // In a real app, you would register with a backend here
-    // For now, we'll just simulate a successful registration
-    navigate("/marketplace");
+  const onSubmit = async (data: FormValues) => {
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      // Use Auth0's signup endpoint
+      await loginWithRedirect({
+        authorizationParams: {
+          screen_hint: "signup",
+          connection: "Username-Password-Authentication",
+        },
+        appState: {
+          returnTo: "/dashboard",
+          signupData: {
+            email: data.email,
+            name: data.name,
+          },
+        },
+      });
+      // Auth0 will handle the redirect
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      setError(
+        err?.message ||
+          "Failed to create account. This email may already be registered.",
+      );
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-md mx-auto bg-white">
+        <CardContent className="pt-6 flex items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <span className="ml-2">Checking authentication status...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Card className="w-full max-w-md mx-auto bg-white">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
+            Already Signed Up
+          </CardTitle>
+          <CardDescription className="text-center">
+            You already have an account and are signed in
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full" onClick={() => navigate("/dashboard")}>
+            Go to Dashboard
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto bg-white">
@@ -74,6 +135,13 @@ const SignUpForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Registration Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -171,8 +239,19 @@ const SignUpForm = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full mt-6">
-              Create Account
+            <Button
+              type="submit"
+              className="w-full mt-6"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
           </form>
         </Form>

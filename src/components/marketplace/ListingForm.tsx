@@ -125,12 +125,61 @@ const ListingForm = () => {
     setStep(step - 1);
   };
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     // Combine all form data
     const finalData = { ...formData, ...data };
     console.log("Form submitted:", finalData);
-    // Here you would typically send the data to your backend
-    alert("Listing created successfully!");
+
+    try {
+      // Import the API functions
+      const { createListing } = await import("@/lib/api");
+      const { useAuth0 } = await import("@auth0/auth0-react");
+      const { user } = useAuth0();
+
+      if (!user?.sub) {
+        alert("You must be logged in to create a listing.");
+        return;
+      }
+
+      // Format the data for Supabase
+      const listingData = {
+        seller_id: user.sub,
+        event_name: finalData.eventName,
+        event_date: new Date(finalData.eventDate).toISOString(),
+        venue: finalData.venue,
+        location: finalData.venue, // Using venue as location for now
+        section: finalData.seatInfo.split(",")[0]?.trim() || "",
+        row: finalData.seatInfo.split(",")[1]?.trim() || "",
+        seats: finalData.seatInfo.split(",")[2]?.trim() || "",
+        quantity: parseInt(finalData.quantity),
+        price: parseFloat(finalData.price),
+        description: finalData.description || "",
+        payment_methods: Object.entries(finalData.paymentMethods)
+          .filter(([_, value]) => value)
+          .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1)),
+        verified: false,
+        status: "active",
+        image_url:
+          "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+      };
+
+      // Create the listing in Supabase
+      const { data: newListing, error } = await createListing(listingData);
+
+      if (error) {
+        console.error("Error creating listing:", error);
+        alert("Failed to create listing. Please try again.");
+        return;
+      }
+
+      alert("Listing created successfully!");
+
+      // Redirect to the marketplace or listing details page
+      window.location.href = "/marketplace";
+    } catch (error) {
+      console.error("Error creating listing:", error);
+      alert("An unexpected error occurred. Please try again.");
+    }
   };
 
   return (

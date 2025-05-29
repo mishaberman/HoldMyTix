@@ -88,6 +88,42 @@ const SingleTicketTransfer = () => {
       // Determine if user is seller or buyer based on active tab
       const isSeller = activeTab === "seller";
 
+      // Import API functions
+      const {
+        createTransaction,
+        createDocuSignAgreement,
+        createEmailNotification,
+      } = await import("@/lib/api");
+
+      // Prepare data for transaction
+      const transactionData = {
+        contract_id: `TIX-${Math.floor(Math.random() * 100000)}`,
+        seller_id: isSeller ? user?.sub : null, // Will be updated with seller's ID if buyer initiates
+        buyer_id: isSeller ? null : user?.sub, // Will be updated with buyer's ID if seller initiates
+        event_name: formData.eventName,
+        event_date: `${formData.eventDate}T${formData.eventTime}:00`,
+        venue: formData.venue,
+        seat_details: `${formData.ticketSection ? `Section ${formData.ticketSection}, ` : ""}${formData.ticketRow ? `Row ${formData.ticketRow}, ` : ""}${formData.ticketSeat ? `Seats ${formData.ticketSeat}` : ""}`,
+        ticket_quantity: parseInt(formData.ticketCount),
+        price: parseFloat(formData.price) * parseInt(formData.ticketCount),
+        payment_method: isSeller ? "TBD" : "Venmo", // Default to Venmo if buyer initiates
+        status: "pending",
+        payment_verified: false,
+        tickets_verified: false,
+        time_remaining: 60, // 1 hour in minutes
+        expiration_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+      };
+
+      // Create transaction in Supabase
+      const { data: transaction, error: transactionError } =
+        await createTransaction(transactionData);
+
+      if (transactionError) {
+        throw new Error(
+          `Failed to create transaction: ${transactionError.message}`,
+        );
+      }
+
       // Prepare data for DocuSign agreement
       const agreementData = {
         sellerName: isSeller ? user?.name || "" : formData.sellerName,
@@ -102,29 +138,59 @@ const SingleTicketTransfer = () => {
           parseInt(formData.ticketCount) * parseFloat(formData.price),
       };
 
-      // Generate DocuSign agreement
+      // Generate DocuSign agreement using the mock function
       const agreementResult = await generateTransferAgreement(agreementData);
 
       if (!agreementResult.success) {
         throw new Error("Failed to generate transfer agreement");
       }
 
-      // Send emails
+      // Store DocuSign agreement in Supabase
+      const docusignData = {
+        transaction_id: transaction.id,
+        envelope_id: agreementResult.data.envelopeId,
+        status: "sent",
+        document_url: agreementResult.data.documentUrl,
+        seller_status: "sent",
+        buyer_status: "sent",
+      };
+
+      await createDocuSignAgreement(docusignData);
+
+      // Send emails using the mock functions
       if (isSeller) {
         // Send instructions to buyer
-        await sendBuyerInstructions(
+        const buyerEmailResult = await sendBuyerInstructions(
           formData.buyerEmail,
           user?.name || "Seller",
           formData.eventName,
           parseFloat(formData.price),
         );
+
+        // Store email notification in Supabase
+        await createEmailNotification({
+          transaction_id: transaction.id,
+          recipient_id: null, // Will be updated when buyer signs up
+          email_type: "buyer_instructions",
+          status: "sent",
+          message_id: buyerEmailResult.messageId,
+        });
       } else {
         // Send instructions to seller
-        await sendSellerInstructions(
+        const sellerEmailResult = await sendSellerInstructions(
           formData.sellerEmail,
           user?.name || "Buyer",
           formData.eventName,
         );
+
+        // Store email notification in Supabase
+        await createEmailNotification({
+          transaction_id: transaction.id,
+          recipient_id: null, // Will be updated when seller signs up
+          email_type: "seller_instructions",
+          status: "sent",
+          message_id: sellerEmailResult.messageId,
+        });
       }
 
       // Send admin notification

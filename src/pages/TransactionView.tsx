@@ -11,13 +11,32 @@ const TransactionView = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading transaction data
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    if (id) {
+      fetchTransaction(id);
+    }
   }, [id]);
+
+  const fetchTransaction = async (transactionId: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { getTransactionById } = await import("@/lib/api");
+      const { data, error } = await getTransactionById(transactionId);
+
+      if (error) throw error;
+
+      if (!data) {
+        throw new Error("Transaction not found");
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error(`Error fetching transaction ${id}:`, err);
+      setError(`Failed to load transaction details. Please try again later.`);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -48,7 +67,10 @@ const TransactionView = () => {
   return (
     <Layout>
       <div className="container py-8">
-        <TransactionDashboard transactionId={id} />
+        <TransactionDashboard
+          transactionId={id}
+          // Additional props will be populated from the database in a real implementation
+        />
       </div>
     </Layout>
   );

@@ -17,12 +17,15 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Navigation Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-sm">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            <Link to="/" className="text-xl font-bold">
-              HoldMyTix
+            <Link to="/" className="text-xl font-bold flex items-center gap-1">
+              <span className="text-primary">Hold</span>MyTix
+              <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
+                Secure
+              </span>
             </Link>
           </div>
           <nav className="hidden md:flex items-center gap-6">
@@ -33,15 +36,26 @@ const Layout = ({ children }: LayoutProps) => {
               to="/marketplace"
               className="text-sm font-medium hover:text-primary"
             >
-              Marketplace
+              Marketplace{" "}
+              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
+                Coming Soon
+              </span>
             </Link>
             {isAuthenticated && (
-              <Link
-                to="/dashboard"
-                className="text-sm font-medium hover:text-primary"
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link
+                  to="/dashboard"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/single-ticket-transfer"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Single Transfer
+                </Link>
+              </>
             )}
             <Link
               to="/how-it-works"
@@ -63,13 +77,27 @@ const Layout = ({ children }: LayoutProps) => {
             {isLoading ? (
               <div className="h-9 w-20 bg-muted animate-pulse rounded-md"></div>
             ) : isAuthenticated ? (
-              <UserProfile />
+              <div className="flex items-center gap-3">
+                <div className="bg-secondary text-primary px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                  Secure Session
+                </div>
+                <UserProfile />
+              </div>
             ) : (
               <>
+                <div className="bg-secondary/50 text-muted-foreground px-3 py-1 rounded-full text-xs font-medium mr-2 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground"></span>
+                  Not Verified
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/sign-in")}
+                  onClick={() =>
+                    navigate("/sign-in", {
+                      state: { returnTo: location.pathname },
+                    })
+                  }
                 >
                   Sign In
                 </Button>
@@ -86,17 +114,46 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="bg-background border-t py-12">
+      <footer className="bg-secondary/30 border-t py-12">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">HoldMyTix</span>
+                <span className="text-xl font-bold flex items-center gap-1">
+                  <span className="text-primary">Hold</span>MyTix
+                  <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
+                    Secure
+                  </span>
+                </span>
               </div>
               <p className="text-muted-foreground mb-4">
                 The secure middleman for peer-to-peer ticket exchanges.
               </p>
+              <div className="flex items-center gap-2 mb-4 bg-secondary/50 p-3 rounded-lg">
+                <div className="p-2 bg-primary rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-white"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-medium">Secure & Trusted</p>
+                  <p className="text-xs text-muted-foreground">
+                    All transactions are protected
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div>

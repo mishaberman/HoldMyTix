@@ -1,11 +1,24 @@
 import React from "react";
 import SignInForm from "@/components/auth/SignInForm";
 import { Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const SignIn = () => {
   const { isAuthenticated, isLoading } = useAuth0();
+
+  // If user is already authenticated, redirect to dashboard
+  if (isAuthenticated && !isLoading) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-muted flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted flex flex-col">

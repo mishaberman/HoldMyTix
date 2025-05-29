@@ -56,88 +56,57 @@ const ListingGrid = ({
 
     // Otherwise fetch from API
     fetchEvents();
-  }, [propListings, eventType, sortBy]);
+  }, [propListings, eventType, sortBy, searchQuery]);
 
   const fetchEvents = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Using Ticketmaster Discovery API
-      // Note: In a real app, you would use your backend to make this call with your API key
-      const keyword = searchQuery
-        ? `&keyword=${encodeURIComponent(searchQuery)}`
-        : "";
-      const classificationName =
-        eventType !== "all" ? `&classificationName=${eventType}` : "";
-      const sort =
-        sortBy === "date"
-          ? "date,asc"
-          : sortBy === "price-low"
-            ? "price,asc"
-            : sortBy === "price-high"
-              ? "price,desc"
-              : "relevance,desc";
+      // Import the API functions
+      const { getListings } = await import("@/lib/api");
 
-      // Simulating API call with mock data since we can't make real API calls
-      // In a real app, you would use:
-      // const response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=YOUR_API_KEY${keyword}${classificationName}&sort=${sort}`);
-      // const data = await response.json();
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Filter mock data based on search and filters
-      let filteredData = [...defaultListings];
-
-      if (searchQuery) {
-        filteredData = filteredData.filter(
-          (listing) =>
-            listing.eventName
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            listing.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            listing.location.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-      }
-
-      if (eventType !== "all") {
-        // Map our event types to the mock data
-        const eventTypeMap: Record<string, string[]> = {
-          concerts: ["Taylor Swift", "Bad Bunny"],
-          sports: ["Lakers", "Dodgers", "Warriors", "Giants"],
-          theater: ["Hamilton"],
-          festivals: ["Coachella"],
-        };
-
-        filteredData = filteredData.filter((listing) => {
-          const keywords = eventTypeMap[eventType] || [];
-          return keywords.some((keyword) =>
-            listing.eventName.includes(keyword),
-          );
-        });
-      }
-
-      // Sort the data
-      filteredData.sort((a, b) => {
-        if (sortBy === "date") {
-          return (
-            new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-          );
-        } else if (sortBy === "price-low") {
-          return a.price - b.price;
-        } else if (sortBy === "price-high") {
-          return b.price - a.price;
-        } else if (sortBy === "rating") {
-          return b.sellerRating - a.sellerRating;
-        }
-        return 0;
+      // Fetch listings from Supabase
+      const { data, error } = await getListings({
+        eventType,
+        sortBy,
+        searchQuery,
       });
 
-      setListings(filteredData);
+      if (error) throw error;
+
+      // If we have data from Supabase, use it
+      if (data && data.length > 0) {
+        // Transform Supabase data to match our component's expected format
+        const formattedListings = data.map((listing) => ({
+          id: listing.id,
+          eventName: listing.event_name,
+          eventDate: listing.event_date,
+          venue: listing.venue,
+          location: listing.location,
+          price: listing.price,
+          quantity: listing.quantity,
+          section: listing.section || "",
+          row: listing.row || "",
+          seats: listing.seats || "",
+          sellerRating: 4.7, // Default rating until we implement a rating system
+          paymentMethods: listing.payment_methods || [],
+          verified: listing.verified,
+          imageUrl:
+            listing.image_url ||
+            "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+        }));
+
+        setListings(formattedListings);
+      } else {
+        // Fallback to mock data if no Supabase data
+        setListings(defaultListings);
+      }
     } catch (err) {
       console.error("Error fetching events:", err);
       setError("Failed to load events. Please try again later.");
+      // Fallback to mock data on error
+      setListings(defaultListings);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
@@ -14,42 +14,127 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Clock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { ProfileEditor } from "@/components/profile/ProfileEditor";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
   const [activeTab, setActiveTab] = useState("transfers");
 
-  // Mock data for transfers
-  const mockTransfers = [
-    {
-      id: "tx-1",
-      eventName: "Taylor Swift | The Eras Tour",
-      eventDate: "2023-08-15",
-      venue: "SoFi Stadium, Los Angeles",
-      role: "seller",
-      counterparty: "john.doe@example.com",
-      status: "pending",
-      price: 350,
-      created: "2023-07-20",
-      ticketTransferred: true,
-      paymentReceived: false,
-      agreementSigned: true,
-    },
-    {
-      id: "tx-2",
-      eventName: "Beyoncé | Renaissance World Tour",
-      eventDate: "2023-09-02",
-      venue: "MetLife Stadium, New Jersey",
-      role: "buyer",
-      counterparty: "jane.smith@example.com",
-      status: "completed",
-      price: 275,
-      created: "2023-07-15",
-      ticketTransferred: true,
-      paymentReceived: true,
-      agreementSigned: true,
-    },
-  ];
+  const [transfers, setTransfers] = useState([]);
+  const [loadingTransfers, setLoadingTransfers] = useState(false);
+  const [transferError, setTransferError] = useState(null);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.sub) {
+      fetchUserTransactions(user.sub);
+    }
+  }, [isAuthenticated, user]);
+
+  const fetchUserTransactions = async (userId) => {
+    setLoadingTransfers(true);
+    setTransferError(null);
+
+    try {
+      const { getUserTransactions } = await import("@/lib/api");
+      const { data, error } = await getUserTransactions(userId);
+
+      if (error) throw error;
+
+      if (data) {
+        // Transform the data to match our component's expected format
+        const formattedTransfers = data.map((tx) => ({
+          id: tx.id,
+          eventName: tx.event_name,
+          eventDate: tx.event_date,
+          venue: tx.venue,
+          role: tx.seller_id === userId ? "seller" : "buyer",
+          counterparty:
+            tx.seller_id === userId ? tx.buyer?.email : tx.seller?.email,
+          status: tx.status,
+          price: tx.price,
+          created: tx.created_at,
+          ticketTransferred: tx.tickets_verified,
+          paymentReceived: tx.payment_verified,
+          agreementSigned:
+            tx.docusign_agreements?.some(
+              (a) => a.status === "signed" || a.status === "completed",
+            ) || false,
+        }));
+
+        setTransfers(formattedTransfers);
+      } else {
+        // Fallback to mock data if no transactions found
+        setTransfers([
+          {
+            id: "tx-1",
+            eventName: "Taylor Swift | The Eras Tour",
+            eventDate: "2023-08-15",
+            venue: "SoFi Stadium, Los Angeles",
+            role: "seller",
+            counterparty: "john.doe@example.com",
+            status: "pending",
+            price: 350,
+            created: "2023-07-20",
+            ticketTransferred: true,
+            paymentReceived: false,
+            agreementSigned: true,
+          },
+          {
+            id: "tx-2",
+            eventName: "Beyoncé | Renaissance World Tour",
+            eventDate: "2023-09-02",
+            venue: "MetLife Stadium, New Jersey",
+            role: "buyer",
+            counterparty: "jane.smith@example.com",
+            status: "completed",
+            price: 275,
+            created: "2023-07-15",
+            ticketTransferred: true,
+            paymentReceived: true,
+            agreementSigned: true,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      setTransferError(
+        "Failed to load your transactions. Please try again later.",
+      );
+      // Fallback to mock data on error
+      setTransfers([
+        {
+          id: "tx-1",
+          eventName: "Taylor Swift | The Eras Tour",
+          eventDate: "2023-08-15",
+          venue: "SoFi Stadium, Los Angeles",
+          role: "seller",
+          counterparty: "john.doe@example.com",
+          status: "pending",
+          price: 350,
+          created: "2023-07-20",
+          ticketTransferred: true,
+          paymentReceived: false,
+          agreementSigned: true,
+        },
+        {
+          id: "tx-2",
+          eventName: "Beyoncé | Renaissance World Tour",
+          eventDate: "2023-09-02",
+          venue: "MetLife Stadium, New Jersey",
+          role: "buyer",
+          counterparty: "jane.smith@example.com",
+          status: "completed",
+          price: 275,
+          created: "2023-07-15",
+          ticketTransferred: true,
+          paymentReceived: true,
+          agreementSigned: true,
+        },
+      ]);
+    } finally {
+      setLoadingTransfers(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -140,8 +225,23 @@ const Dashboard = () => {
 
           <TabsContent value="transfers" className="mt-6">
             <div className="grid gap-6">
-              {mockTransfers.length > 0 ? (
-                mockTransfers.map((transfer) => (
+              {loadingTransfers ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                  <span className="ml-2">Loading your transfers...</span>
+                </div>
+              ) : transferError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-500">{transferError}</p>
+                  <Button
+                    onClick={() => fetchUserTransactions(user?.sub)}
+                    className="mt-4"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              ) : transfers.length > 0 ? (
+                transfers.map((transfer) => (
                   <Card key={transfer.id}>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
@@ -286,35 +386,42 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="account" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-                <CardDescription>
-                  Manage your account details and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium">Profile</p>
-                    <ul className="mt-2 space-y-1">
-                      <li className="flex justify-between">
-                        <span className="text-muted-foreground">Name:</span>
-                        <span className="font-medium">{user?.name}</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-medium">{user?.email}</span>
-                      </li>
-                    </ul>
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Information</CardTitle>
+                  <CardDescription>
+                    Manage your account details and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium">Profile</p>
+                      <ul className="mt-2 space-y-1">
+                        <li className="flex justify-between">
+                          <span className="text-muted-foreground">Name:</span>
+                          <span className="font-medium">{user?.name}</span>
+                        </li>
+                        <li className="flex justify-between">
+                          <span className="text-muted-foreground">Email:</span>
+                          <span className="font-medium">{user?.email}</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Profile Editor */}
+              <div className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+                <div className="bg-card rounded-lg shadow">
+                  {/* Import the ProfileEditor component */}
+                  {isAuthenticated && user && <ProfileEditor />}
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline">Edit Profile</Button>
-                <Button variant="destructive">Delete Account</Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

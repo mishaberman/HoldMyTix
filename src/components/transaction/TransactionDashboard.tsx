@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 interface TransactionDashboardProps {
+  transactionId?: string;
   contractId?: string;
   eventName?: string;
   eventDate?: string;
@@ -41,6 +42,7 @@ interface TransactionDashboardProps {
 }
 
 const TransactionDashboard = ({
+  transactionId,
   contractId = "TIX-12345",
   eventName = "Taylor Swift | The Eras Tour",
   eventDate = "June 15, 2023 - 7:00 PM",
@@ -56,6 +58,8 @@ const TransactionDashboard = ({
   paymentVerified = false,
   ticketsVerified = true,
 }: TransactionDashboardProps) => {
+  // Use transactionId if provided, otherwise use contractId
+  const displayId = transactionId || contractId;
   const [activeTab, setActiveTab] = useState("overview");
 
   // Calculate progress percentage for verification
@@ -100,7 +104,7 @@ const TransactionDashboard = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Transaction Dashboard</h1>
-          <p className="text-muted-foreground">Contract ID: {contractId}</p>
+          <p className="text-muted-foreground">Contract ID: {displayId}</p>
         </div>
         <div className="flex items-center mt-4 md:mt-0">
           {getStatusBadge()}
@@ -388,7 +392,7 @@ const TransactionDashboard = ({
                     <h3 className="text-sm font-medium text-muted-foreground">
                       Contract ID
                     </h3>
-                    <p>{contractId}</p>
+                    <p>{displayId}</p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground">
