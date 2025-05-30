@@ -1,11 +1,13 @@
 import React from "react";
 import SignInForm from "@/components/auth/SignInForm";
-import { Shield } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Shield, AlertCircle } from "lucide-react";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const SignIn = () => {
   const { isAuthenticated, isLoading } = useAuth0();
+  const location = useLocation();
+  const authError = location.state?.error;
 
   // If user is already authenticated, redirect to dashboard
   if (isAuthenticated && !isLoading) {
@@ -31,6 +33,15 @@ const SignIn = () => {
 
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
+          {authError && (
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive text-destructive rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Authentication failed</p>
+                <p className="text-sm">{authError}</p>
+              </div>
+            </div>
+          )}
           <SignInForm />
         </div>
       </div>
