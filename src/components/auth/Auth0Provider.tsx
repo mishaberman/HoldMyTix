@@ -35,6 +35,7 @@ export const Auth0Provider = ({ children }: Auth0ProviderProps) => {
 
     const targetUrl = appState?.returnTo || "/dashboard";
     console.log("Auth0 redirect callback to:", targetUrl);
+    // Use navigate instead of directly setting window.location
     navigate(targetUrl, { replace: true });
   };
 
@@ -53,6 +54,9 @@ export const Auth0Provider = ({ children }: Auth0ProviderProps) => {
 
   // Ensure we have the correct redirect URI
   const redirectUri = `${window.location.origin}/callback`;
+
+  // Log the redirect URI for debugging
+  console.log("Auth0 redirect URI:", redirectUri);
 
   return (
     <Auth0ProviderSDK
