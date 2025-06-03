@@ -13,21 +13,40 @@ const Callback = () => {
     const processCallback = async () => {
       try {
         console.log("Processing Auth0 callback...");
+        console.log("Current URL:", window.location.href);
+        console.log("URL params:", window.location.search);
 
-        // Handle the redirect callback
-        await handleRedirectCallback();
-
-        console.log("Auth0 callback processed successfully");
+        // Clear any existing state to prevent conflicts
+        if (
+          window.location.search.includes("code=") &&
+          window.location.search.includes("state=")
+        ) {
+          // Handle the redirect callback
+          await handleRedirectCallback();
+          console.log("Auth0 callback processed successfully");
+        } else {
+          console.log("No auth code found in URL, redirecting to sign-in");
+          navigate("/sign-in", { replace: true });
+        }
       } catch (err) {
         console.error("Error processing Auth0 callback:", err);
+        // On error, redirect to sign-in with error message
+        navigate("/sign-in", {
+          replace: true,
+          state: { error: "Authentication failed. Please try again." },
+        });
       }
     };
 
     // Only process if we're not already authenticated and not loading
-    if (!isAuthenticated && !isLoading) {
+    if (
+      !isAuthenticated &&
+      !isLoading &&
+      window.location.pathname === "/callback"
+    ) {
       processCallback();
     }
-  }, [handleRedirectCallback, isAuthenticated, isLoading]);
+  }, [handleRedirectCallback, isAuthenticated, isLoading, navigate]);
 
   useEffect(() => {
     // Once authenticated, set the user and redirect
