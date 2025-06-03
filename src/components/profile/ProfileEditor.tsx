@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,16 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const ProfileEditor = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const [fullName, setFullName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (user) {
-      setFullName(user.name || "");
-      setAvatarUrl(user.picture || "");
-    }
-  }, [user]);
 
   if (isLoading) {
     return (

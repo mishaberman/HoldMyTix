@@ -75,9 +75,9 @@ const ListingGrid = ({
 
       if (error) throw error;
 
-      // If we have data from Supabase, use it
+      // If we have data from the API, use it
       if (data && data.length > 0) {
-        // Transform Supabase data to match our component's expected format
+        // Transform API data to match our component's expected format
         const formattedListings = data.map((listing) => ({
           id: listing.id,
           eventName: listing.event_name,
@@ -99,7 +99,7 @@ const ListingGrid = ({
 
         setListings(formattedListings);
       } else {
-        // Fallback to mock data if no Supabase data
+        // Fallback to mock data if no API data
         setListings(defaultListings);
       }
     } catch (err) {

@@ -114,13 +114,13 @@ const SingleTicketTransfer = () => {
         expiration_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
       };
 
-      // Create transaction in Supabase
+      // Create transaction
       const { data: transaction, error: transactionError } =
         await createTransaction(transactionData);
 
       if (transactionError) {
         throw new Error(
-          `Failed to create transaction: ${transactionError.message}`,
+          `Failed to create transaction: ${transactionError.message || "Unknown error"}`,
         );
       }
 
@@ -145,7 +145,7 @@ const SingleTicketTransfer = () => {
         throw new Error("Failed to generate transfer agreement");
       }
 
-      // Store DocuSign agreement in Supabase
+      // Store DocuSign agreement
       const docusignData = {
         transaction_id: transaction.id,
         envelope_id: agreementResult.data.envelopeId,
@@ -167,10 +167,10 @@ const SingleTicketTransfer = () => {
           parseFloat(formData.price),
         );
 
-        // Store email notification in Supabase
+        // Store email notification
         await createEmailNotification({
           transaction_id: transaction.id,
-          recipient_id: null, // Will be updated when buyer signs up
+          recipient_id: null,
           email_type: "buyer_instructions",
           status: "sent",
           message_id: buyerEmailResult.messageId,
@@ -183,10 +183,10 @@ const SingleTicketTransfer = () => {
           formData.eventName,
         );
 
-        // Store email notification in Supabase
+        // Store email notification
         await createEmailNotification({
           transaction_id: transaction.id,
-          recipient_id: null, // Will be updated when seller signs up
+          recipient_id: null,
           email_type: "seller_instructions",
           status: "sent",
           message_id: sellerEmailResult.messageId,

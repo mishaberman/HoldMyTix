@@ -1,10 +1,9 @@
 import { Suspense, lazy } from "react";
-import { Routes, Route, useRoutes } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Auth0Provider } from "@/components/auth/Auth0Provider";
 import { Auth0ProviderWrapper } from "@/components/auth/Auth0ProviderWrapper";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import Home from "./components/home";
-import routes from "tempo-routes";
 import { Toaster } from "@/components/ui/toaster";
 
 // Lazy load pages for better performance
@@ -32,9 +31,6 @@ function App() {
             </div>
           }
         >
-          {/* For the tempo routes */}
-          {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
-
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/sign-in" element={<SignIn />} />
@@ -65,11 +61,6 @@ function App() {
                 </AuthGuard>
               }
             />
-
-            {/* Add this before the catchall route */}
-            {import.meta.env.VITE_TEMPO === "true" && (
-              <Route path="/tempobook/*" element={<div />} />
-            )}
           </Routes>
 
           {/* Toast notifications */}

@@ -133,17 +133,13 @@ const ListingForm = () => {
     try {
       // Import the API functions
       const { createListing } = await import("@/lib/api");
-      const { useAuth0 } = await import("@auth0/auth0-react");
-      const { user } = useAuth0();
 
-      if (!user?.sub) {
-        alert("You must be logged in to create a listing.");
-        return;
-      }
+      // For now, we'll use a mock user ID since we're not using Supabase
+      const mockUserId = "user-" + Date.now();
 
-      // Format the data for Supabase
+      // Format the data for the API
       const listingData = {
-        seller_id: user.sub,
+        seller_id: mockUserId,
         event_name: finalData.eventName,
         event_date: new Date(finalData.eventDate).toISOString(),
         venue: finalData.venue,
@@ -163,7 +159,7 @@ const ListingForm = () => {
           "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
       };
 
-      // Create the listing in Supabase
+      // Create the listing
       const { data: newListing, error } = await createListing(listingData);
 
       if (error) {

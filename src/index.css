@@ -36,14 +36,6 @@
     --ring: 186 100% 29%;
 
     --radius: 0.5rem;
-
-    /* Adding success colors like Wise */
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
-
-    /* Adding info colors like Wise */
-    --info: 199 89% 48%;
-    --info-foreground: 210 40% 98%;
   }
 
   .dark {
