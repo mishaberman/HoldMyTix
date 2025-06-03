@@ -57,6 +57,7 @@ export const Auth0Provider = ({ children }: Auth0ProviderProps) => {
 
   // Log the redirect URI for debugging
   console.log("Auth0 redirect URI:", redirectUri);
+  console.log("Current origin:", window.location.origin);
 
   return (
     <Auth0ProviderSDK
