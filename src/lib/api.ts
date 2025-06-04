@@ -1,116 +1,42 @@
+
 import { supabase } from "@/lib/supabase";
+import type { Database } from "@/types/supabase";
 
-// API functions using Supabase for real data persistence
+type TicketTransfer = Database['public']['Tables']['ticket_transfers']['Row'];
+type TicketTransferInsert = Database['public']['Tables']['ticket_transfers']['Insert'];
+type TicketTransferUpdate = Database['public']['Tables']['ticket_transfers']['Update'];
 
-// Mock data for development
-const mockListings = [
-  {
-    id: "1",
-    event_name: "Taylor Swift - The Eras Tour",
-    event_date: "2023-08-15T19:00:00",
-    venue: "SoFi Stadium",
-    location: "Los Angeles, CA",
-    price: 350,
-    quantity: 2,
-    section: "134",
-    row: "G",
-    seats: "12-13",
-    payment_methods: ["Venmo", "PayPal"],
-    verified: true,
-    status: "active",
-    image_url:
-      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
-    seller_id: "user1",
-  },
-  {
-    id: "2",
-    event_name: "Lakers vs. Warriors",
-    event_date: "2023-08-20T18:30:00",
-    venue: "Crypto.com Arena",
-    location: "Los Angeles, CA",
-    price: 175,
-    quantity: 4,
-    section: "217",
-    row: "C",
-    seats: "5-8",
-    payment_methods: ["Venmo", "Zelle"],
-    verified: true,
-    status: "active",
-    image_url:
-      "https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=800&q=80",
-    seller_id: "user2",
-  },
-];
-
-const mockTransactions = [
-  {
-    id: "tx-1",
-    contract_id: "TIX-12345",
-    event_name: "Taylor Swift | The Eras Tour",
-    event_date: "2023-08-15T19:00:00",
-    venue: "SoFi Stadium, Los Angeles",
-    seat_details: "Section 134, Row G, Seats 12-13",
-    ticket_quantity: 2,
-    price: 700,
-    payment_method: "Venmo",
-    status: "active",
-    payment_verified: false,
-    tickets_verified: true,
-    seller_id: "user1",
-    buyer_id: "user2",
-    created_at: "2023-07-20T10:00:00Z",
-  },
-];
-
-// Listings API
-export const getListings = async (filters?: any) => {
+// Listings API - using ticket_transfers table as the source
+export const getListings = async (filters?: {
+  eventType?: string;
+  sortBy?: string;
+  searchQuery?: string;
+}) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    let query = supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("status", "active");
 
-    let filteredListings = [...mockListings];
-
-    // Apply filters if provided
-    if (filters) {
-      if (filters.eventType && filters.eventType !== "all") {
-        filteredListings = filteredListings.filter((listing) =>
-          listing.event_name
-            .toLowerCase()
-            .includes(filters.eventType.toLowerCase()),
-        );
-      }
-
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
-        filteredListings = filteredListings.filter(
-          (listing) =>
-            listing.event_name.toLowerCase().includes(query) ||
-            listing.venue.toLowerCase().includes(query) ||
-            listing.location.toLowerCase().includes(query),
-        );
-      }
-
-      // Apply sorting
-      if (filters.sortBy) {
-        switch (filters.sortBy) {
-          case "date":
-            filteredListings.sort(
-              (a, b) =>
-                new Date(a.event_date).getTime() -
-                new Date(b.event_date).getTime(),
-            );
-            break;
-          case "price-low":
-            filteredListings.sort((a, b) => a.price - b.price);
-            break;
-          case "price-high":
-            filteredListings.sort((a, b) => b.price - a.price);
-            break;
-        }
-      }
+    if (filters?.searchQuery) {
+      query = query.or(`event_name.ilike.%${filters.searchQuery}%,venue.ilike.%${filters.searchQuery}%`);
     }
 
-    return { data: filteredListings, error: null };
+    if (filters?.sortBy === "price") {
+      query = query.order("price", { ascending: true });
+    } else if (filters?.sortBy === "date") {
+      query = query.order("event_date", { ascending: true });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    return { data: data || [], error: null };
   } catch (error) {
     console.error("Error fetching listings:", error);
     return { data: null, error };
@@ -119,55 +45,80 @@ export const getListings = async (filters?: any) => {
 
 export const getListingById = async (id: string) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    const listing = mockListings.find((l) => l.id === id);
-    if (!listing) {
-      throw new Error("Listing not found");
+    if (error) {
+      throw error;
     }
 
-    return { data: listing, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error fetching listing ${id}:`, error);
     return { data: null, error };
   }
 };
 
-export const createListing = async (listingData: any) => {
+export const createListing = async (listingData: Partial<TicketTransferInsert>) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const newListing = {
-      id: `listing-${Date.now()}`,
+    const now = new Date().toISOString();
+    const newListing: TicketTransferInsert = {
+      contract_id: `contract-${Date.now()}`,
+      event_name: listingData.event_name || "",
+      event_date: listingData.event_date || new Date().toISOString(),
+      venue: listingData.venue || "",
+      price: listingData.price || 0,
+      ticket_quantity: listingData.ticket_quantity || 1,
+      status: "active",
+      seller_id: listingData.seller_id,
+      seller_name: listingData.seller_name,
+      seller_email: listingData.seller_email,
+      seat_details: listingData.seat_details,
+      payment_method: listingData.payment_method,
+      ticket_provider: listingData.ticket_provider,
+      ticket_notes: listingData.ticket_notes,
+      created_at: now,
+      updated_at: now,
       ...listingData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
 
-    mockListings.push(newListing);
-    return { data: [newListing], error: null };
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .insert(newListing)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
   } catch (error) {
     console.error("Error creating listing:", error);
     return { data: null, error };
   }
 };
 
-export const updateListing = async (id: string, updates: any) => {
+export const updateListing = async (id: string, updates: Partial<TicketTransferUpdate>) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
-    const listingIndex = mockListings.findIndex((l) => l.id === id);
-    if (listingIndex === -1) {
-      throw new Error("Listing not found");
+    if (error) {
+      throw error;
     }
 
-    mockListings[listingIndex] = {
-      ...mockListings[listingIndex],
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    return { data: [mockListings[listingIndex]], error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error updating listing ${id}:`, error);
     return { data: null, error };
@@ -177,11 +128,11 @@ export const updateListing = async (id: string, updates: any) => {
 // Transactions API
 export const getUserTransactions = async (userId: string) => {
   try {
-    // Fetch from Supabase
     const { data, error } = await supabase
       .from("ticket_transfers")
       .select("*")
-      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`);
+      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`)
+      .order("created_at", { ascending: false });
 
     if (error) {
       throw error;
@@ -196,26 +147,48 @@ export const getUserTransactions = async (userId: string) => {
 
 export const getTransactionById = async (id: string) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    const transaction = mockTransactions.find((tx) => tx.id === id);
-    if (!transaction) {
-      throw new Error("Transaction not found");
+    if (error) {
+      throw error;
     }
 
-    return { data: transaction, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error fetching transaction ${id}:`, error);
     return { data: null, error };
   }
 };
 
-export const createTransaction = async (transactionData: any) => {
+export const createTransaction = async (transactionData: Partial<TicketTransferInsert>) => {
   try {
-    // Insert into Supabase
+    const now = new Date().toISOString();
+    const expirationTime = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour from now
+    
+    const newTransaction: TicketTransferInsert = {
+      contract_id: `contract-${Date.now()}`,
+      event_name: transactionData.event_name || "",
+      event_date: transactionData.event_date || new Date().toISOString(),
+      venue: transactionData.venue || "",
+      price: transactionData.price || 0,
+      ticket_quantity: transactionData.ticket_quantity || 1,
+      status: "pending",
+      payment_verified: false,
+      tickets_verified: false,
+      time_remaining: 60,
+      expiration_time: expirationTime,
+      created_at: now,
+      updated_at: now,
+      ...transactionData,
+    };
+
     const { data, error } = await supabase
       .from("ticket_transfers")
-      .insert(transactionData)
+      .insert(newTransaction)
       .select()
       .single();
 
@@ -230,34 +203,39 @@ export const createTransaction = async (transactionData: any) => {
   }
 };
 
-export const updateTransaction = async (id: string, updates: any) => {
+export const updateTransaction = async (id: string, updates: Partial<TicketTransferUpdate>) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
-    const transactionIndex = mockTransactions.findIndex((tx) => tx.id === id);
-    if (transactionIndex === -1) {
-      throw new Error("Transaction not found");
+    if (error) {
+      throw error;
     }
 
-    mockTransactions[transactionIndex] = {
-      ...mockTransactions[transactionIndex],
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    return { data: [mockTransactions[transactionIndex]], error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error updating transaction ${id}:`, error);
     return { data: null, error };
   }
 };
 
-// Mock functions for other entities
+// DocuSign Agreements API
 export const createDocuSignAgreement = async (agreementData: any) => {
   try {
     const { data, error } = await supabase
       .from("docusign_agreements")
-      .insert(agreementData)
+      .insert({
+        ...agreementData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .select()
       .single();
 
@@ -273,15 +251,37 @@ export const createDocuSignAgreement = async (agreementData: any) => {
 };
 
 export const updateDocuSignAgreement = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
+  try {
+    const { data, error } = await supabase
+      .from("docusign_agreements")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error(`Error updating DocuSign agreement ${id}:`, error);
+    return { data: null, error };
+  }
 };
 
+// Email Notifications API
 export const createEmailNotification = async (emailData: any) => {
   try {
     const { data, error } = await supabase
       .from("email_notifications")
-      .insert(emailData)
+      .insert({
+        ...emailData,
+        created_at: new Date().toISOString(),
+      })
       .select()
       .single();
 
@@ -297,29 +297,25 @@ export const createEmailNotification = async (emailData: any) => {
 };
 
 export const updateEmailNotification = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
+  try {
+    const { data, error } = await supabase
+      .from("email_notifications")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error(`Error updating email notification ${id}:`, error);
+    return { data: null, error };
+  }
 };
 
-export const createTicketTransfer = async (transferData: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return {
-    data: { id: `transfer-${Date.now()}`, ...transferData },
-    error: null,
-  };
-};
-
-export const updateTicketTransfer = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
-};
-
-export const createPaymentRecord = async (paymentData: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id: `payment-${Date.now()}`, ...paymentData }, error: null };
-};
-
-export const updatePaymentRecord = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
+export const createTicketTransfer = async (transferData: Partial<TicketTransferInsert>) => {
+  return createTransaction(transferData);
 };

@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Get the transaction
     const { data: transaction, error: fetchError } = await supabase
-      .from("transactions")
+      .from("ticket_transfers")
       .select("*")
       .eq("id", transactionId)
       .single();
@@ -50,9 +50,10 @@ Deno.serve(async (req) => {
 
     // Update the transaction with ticket verification status
     const { error: updateError } = await supabase
-      .from("transactions")
+      .from("ticket_transfers")
       .update({
         tickets_verified: ticketsVerified,
+        ticket_provider: provider || transaction.ticket_provider,
         updated_at: now,
       })
       .eq("id", transactionId);
@@ -61,26 +62,10 @@ Deno.serve(async (req) => {
       throw updateError;
     }
 
-    // Create or update ticket transfer record
-    const { error: transferError } = await supabase
-      .from("ticket_transfers")
-      .upsert({
-        transaction_id: transactionId,
-        provider: provider || "Unknown",
-        transfer_status: ticketsVerified ? "completed" : "pending",
-        verification_code: verificationCode || null,
-        transfer_date: ticketsVerified ? now : null,
-        updated_at: now,
-      });
-
-    if (transferError) {
-      throw transferError;
-    }
-
     // Check if both payment and tickets are verified to complete the transaction
     if (ticketsVerified && transaction.payment_verified) {
       const { error: completeError } = await supabase
-        .from("transactions")
+        .from("ticket_transfers")
         .update({
           status: "completed",
           updated_at: now,
@@ -95,25 +80,25 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        verified: ticketsVerified,
-        transactionId,
-        transactionStatus:
-          ticketsVerified && transaction.payment_verified
-            ? "completed"
-            : transaction.status,
+        tickets_verified: ticketsVerified,
+        transaction_status: ticketsVerified && transaction.payment_verified ? "completed" : "pending",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      },
+      }
     );
   } catch (error) {
+    console.error("Error verifying tickets:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      },
+        status: 500,
+      }
     );
   }
 });

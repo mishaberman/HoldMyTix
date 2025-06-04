@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Get the transaction
     const { data: transaction, error: fetchError } = await supabase
-      .from("transactions")
+      .from("ticket_transfers")
       .select("*")
       .eq("id", transactionId)
       .single();
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     // Update the transaction with payment verification status
     const { error: updateError } = await supabase
-      .from("transactions")
+      .from("ticket_transfers")
       .update({
         payment_verified: paymentVerified,
         payment_method: paymentMethod || transaction.payment_method,
@@ -62,26 +62,10 @@ Deno.serve(async (req) => {
       throw updateError;
     }
 
-    // Create or update payment record
-    const { error: paymentError } = await supabase
-      .from("payment_records")
-      .upsert({
-        transaction_id: transactionId,
-        payment_method: paymentMethod || transaction.payment_method,
-        amount: transaction.price,
-        status: paymentVerified ? "completed" : "pending",
-        payment_date: paymentVerified ? now : null,
-        updated_at: now,
-      });
-
-    if (paymentError) {
-      throw paymentError;
-    }
-
     // Check if both payment and tickets are verified to complete the transaction
     if (paymentVerified && transaction.tickets_verified) {
       const { error: completeError } = await supabase
-        .from("transactions")
+        .from("ticket_transfers")
         .update({
           status: "completed",
           updated_at: now,
@@ -96,25 +80,25 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        verified: paymentVerified,
-        transactionId,
-        transactionStatus:
-          paymentVerified && transaction.tickets_verified
-            ? "completed"
-            : transaction.status,
+        payment_verified: paymentVerified,
+        transaction_status: paymentVerified && transaction.tickets_verified ? "completed" : "pending",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      },
+      }
     );
   } catch (error) {
+    console.error("Error verifying payment:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      },
+        status: 500,
+      }
     );
   }
 });
