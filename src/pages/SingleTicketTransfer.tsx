@@ -99,20 +99,28 @@ const SingleTicketTransfer = () => {
       // Prepare data for transaction
       const transactionData = {
         contract_id: `TIX-${Math.floor(Math.random() * 100000)}`,
-        seller_id: isSeller ? user?.sub : null, // Will be updated with seller's ID if buyer initiates
-        buyer_id: isSeller ? null : user?.sub, // Will be updated with buyer's ID if seller initiates
+        seller_id: isSeller ? user?.sub : null,
+        buyer_id: isSeller ? null : user?.sub,
         event_name: formData.eventName,
         event_date: `${formData.eventDate}T${formData.eventTime}:00`,
         venue: formData.venue,
-        seat_details: `${formData.ticketSection ? `Section ${formData.ticketSection}, ` : ""}${formData.ticketRow ? `Row ${formData.ticketRow}, ` : ""}${formData.ticketSeat ? `Seats ${formData.ticketSeat}` : ""}`,
+        seat_details:
+          `${formData.ticketSection ? `Section ${formData.ticketSection}, ` : ""}${formData.ticketRow ? `Row ${formData.ticketRow}, ` : ""}${formData.ticketSeat ? `Seats ${formData.ticketSeat}` : ""}`.trim() ||
+          "General Admission",
         ticket_quantity: parseInt(formData.ticketCount),
         price: parseFloat(formData.price) * parseInt(formData.ticketCount),
-        payment_method: isSeller ? "TBD" : "Venmo", // Default to Venmo if buyer initiates
+        payment_method: isSeller ? "TBD" : "Venmo",
         status: "pending",
         payment_verified: false,
         tickets_verified: false,
-        time_remaining: 60, // 1 hour in minutes
-        expiration_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+        time_remaining: 60,
+        expiration_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        ticket_provider: formData.ticketProvider,
+        ticket_notes: formData.ticketNotes,
+        seller_name: isSeller ? user?.name || "" : formData.sellerName,
+        seller_email: isSeller ? user?.email || "" : formData.sellerEmail,
+        buyer_name: isSeller ? formData.buyerName : user?.name || "",
+        buyer_email: isSeller ? formData.buyerEmail : user?.email || "",
       };
 
       // Create transaction
@@ -202,17 +210,25 @@ const SingleTicketTransfer = () => {
       );
 
       // Send detailed ticket transfer request to info@holdmytix.com
-      await sendTicketTransferRequest(
+      console.log("About to send ticket transfer request email");
+      const emailResult = await sendTicketTransferRequest(
         formData.eventName,
         `${formData.eventDate} at ${formData.eventTime}`,
         formData.venue,
-        `${formData.ticketCount} ticket(s) - ${formData.ticketSection ? `Section ${formData.ticketSection}, ` : ""}${formData.ticketRow ? `Row ${formData.ticketRow}, ` : ""}${formData.ticketSeat ? `Seats ${formData.ticketSeat}` : "General Admission"}`,
+        `${formData.ticketCount} ticket(s) - ${transactionData.seat_details}`,
         parseFloat(formData.price) * parseInt(formData.ticketCount),
         isSeller ? user?.name || "" : formData.sellerName,
         isSeller ? user?.email || "" : formData.sellerEmail,
         isSeller ? formData.buyerName : user?.name || "",
         isSeller ? formData.buyerEmail : user?.email || "",
       );
+
+      console.log("Email result:", emailResult);
+
+      if (!emailResult.success) {
+        console.warn("Failed to send email notification:", emailResult.error);
+        // Don't fail the entire process if email fails
+      }
 
       // Show success message and redirect after delay
       setSuccess(true);

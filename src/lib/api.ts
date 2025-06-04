@@ -1,5 +1,6 @@
-// Mock API functions for development
-// These will be replaced with actual API calls when backend is implemented
+import { supabase } from "@/lib/supabase";
+
+// API functions using Supabase for real data persistence
 
 // Mock data for development
 const mockListings = [
@@ -176,13 +177,17 @@ export const updateListing = async (id: string, updates: any) => {
 // Transactions API
 export const getUserTransactions = async (userId: string) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Fetch from Supabase
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`);
 
-    const userTransactions = mockTransactions.filter(
-      (tx) => tx.seller_id === userId || tx.buyer_id === userId,
-    );
+    if (error) {
+      throw error;
+    }
 
-    return { data: userTransactions, error: null };
+    return { data: data || [], error: null };
   } catch (error) {
     console.error(`Error fetching transactions for user ${userId}:`, error);
     return { data: null, error };
@@ -207,17 +212,18 @@ export const getTransactionById = async (id: string) => {
 
 export const createTransaction = async (transactionData: any) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .insert(transactionData)
+      .select()
+      .single();
 
-    const newTransaction = {
-      id: `tx-${Date.now()}`,
-      ...transactionData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    if (error) {
+      throw error;
+    }
 
-    mockTransactions.push(newTransaction);
-    return { data: newTransaction, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error("Error creating transaction:", error);
     return { data: null, error };
@@ -248,11 +254,22 @@ export const updateTransaction = async (id: string, updates: any) => {
 
 // Mock functions for other entities
 export const createDocuSignAgreement = async (agreementData: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return {
-    data: { id: `agreement-${Date.now()}`, ...agreementData },
-    error: null,
-  };
+  try {
+    const { data, error } = await supabase
+      .from("docusign_agreements")
+      .insert(agreementData)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error creating DocuSign agreement:", error);
+    return { data: null, error };
+  }
 };
 
 export const updateDocuSignAgreement = async (id: string, updates: any) => {
@@ -261,8 +278,22 @@ export const updateDocuSignAgreement = async (id: string, updates: any) => {
 };
 
 export const createEmailNotification = async (emailData: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id: `email-${Date.now()}`, ...emailData }, error: null };
+  try {
+    const { data, error } = await supabase
+      .from("email_notifications")
+      .insert(emailData)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error creating email notification:", error);
+    return { data: null, error };
+  }
 };
 
 export const updateEmailNotification = async (id: string, updates: any) => {

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 
+// Use environment variable for Resend API key in production
 const resend = new Resend("re_RTudWpro_EVjknDQHVnPaLXFyWqjszAU7");
 
 interface EmailData {
@@ -199,6 +200,7 @@ export const sendTicketTransferRequest = async (
   buyerName: string,
   buyerEmail: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
+  console.log("Sending ticket transfer request email to info@holdmytix.com");
   return sendEmail({
     to: "info@holdmytix.com",
     subject: `🎫 Ticket Transfer Request: ${eventName}`,

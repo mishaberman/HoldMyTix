@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Shield, Info, Loader2 } from "lucide-react";
+import { signInAuth0User } from "@/lib/auth0-api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -82,21 +83,31 @@ const SignInForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Use popup login instead of redirect to avoid leaving the page
-      await loginWithRedirect({
-        authorizationParams: {
-          screen_hint: "login",
-          login_hint: data.email,
-          connection: "Username-Password-Authentication",
-          prompt: "login",
-        },
-        appState: {
-          returnTo,
-          email: data.email,
-          rememberMe: data.rememberMe,
-        },
-        openUrl: false, // This prevents the redirect
+      // Try direct Auth0 API sign in first
+      const signInResult = await signInAuth0User({
+        email: data.email,
+        password: data.password,
+        connection: "Username-Password-Authentication",
       });
+
+      if (signInResult.success) {
+        // If direct sign in works, use the token to authenticate
+        // For now, fall back to redirect method
+        await loginWithRedirect({
+          authorizationParams: {
+            screen_hint: "login",
+            login_hint: data.email,
+            connection: "Username-Password-Authentication",
+          },
+          appState: {
+            returnTo,
+            email: data.email,
+            rememberMe: data.rememberMe,
+          },
+        });
+      } else {
+        throw new Error(signInResult.error);
+      }
     } catch (err: any) {
       console.error("Login error:", err);
       setError(
@@ -114,7 +125,6 @@ const SignInForm = () => {
         connection: connection,
       },
       appState: { returnTo },
-      openUrl: false, // This prevents the redirect
     });
   };
 

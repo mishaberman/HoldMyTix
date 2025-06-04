@@ -5,6 +5,8 @@ import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Loader2 } from "lucide-react";
+import { createAuth0User } from "@/lib/auth0-api";
+import { supabase } from "@/lib/supabase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -68,21 +70,43 @@ const SignUpForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Use Auth0's signup endpoint
+      // Create user directly via Auth0 API
+      const auth0Result = await createAuth0User({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        connection: "Username-Password-Authentication",
+      });
+
+      if (!auth0Result.success) {
+        throw new Error(auth0Result.error);
+      }
+
+      // Create user in Supabase
+      const { error: supabaseError } = await supabase.from("users").insert({
+        id: auth0Result.data._id || `auth0|${Date.now()}`,
+        email: data.email,
+        full_name: data.name,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      if (supabaseError) {
+        console.warn("Failed to create user in Supabase:", supabaseError);
+        // Don't fail the signup if Supabase fails
+      }
+
+      // Now sign in the user
       await loginWithRedirect({
         authorizationParams: {
-          screen_hint: "signup",
+          screen_hint: "login",
+          login_hint: data.email,
           connection: "Username-Password-Authentication",
         },
         appState: {
           returnTo: "/dashboard",
-          signupData: {
-            email: data.email,
-            name: data.name,
-          },
         },
       });
-      // Auth0 will handle the redirect
     } catch (err: any) {
       console.error("Signup error:", err);
       setError(
