@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,10 +9,22 @@ import {
   Clock,
   CreditCard,
   CheckCircle,
+  User,
+  LogOut,
 } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading, user, logout } = useAuth0();
+
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
@@ -51,23 +64,59 @@ const Home = () => {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/sign-in")}
-            >
-              Sign In
-            </Button>
-            <Button size="sm" onClick={() => navigate("/sign-up")}>
-              Get Started
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => navigate("/single-ticket-transfer")}
-            >
-              Single Transfer
-            </Button>
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+            ) : isAuthenticated ? (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4" />
+                  <span>Welcome, {user?.name || user?.email}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate("/single-ticket-transfer")}
+                >
+                  Single Transfer
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/sign-in")}
+                >
+                  Sign In
+                </Button>
+                <Button size="sm" onClick={() => navigate("/sign-up")}>
+                  Get Started
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate("/single-ticket-transfer")}
+                >
+                  Single Transfer
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

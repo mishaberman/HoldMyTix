@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Shield, Info, Loader2 } from "lucide-react";
-import Auth0Lock from "auth0-lock";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,16 +45,9 @@ type FormValues = z.infer<typeof formSchema>;
 const SignInForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    loginWithRedirect,
-    isAuthenticated,
-    isLoading,
-    getAccessTokenSilently,
-  } = useAuth0();
+  const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showEmbeddedLogin, setShowEmbeddedLogin] = useState(false);
-  const lockRef = useRef<Auth0Lock | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -66,60 +58,21 @@ const SignInForm = () => {
     },
   });
 
-  // Initialize Auth0 Lock for embedded authentication
+  // Check for authentication errors from URL params
   useEffect(() => {
-    const domain = import.meta.env.VITE_AUTH0_DOMAIN || "mishaberman.auth0.com";
-    const clientId =
-      import.meta.env.VITE_AUTH0_CLIENT_ID ||
-      "T17DIzlALEvcYGtuUPQOQnZrTH9fFYcd";
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get("error");
+    const errorDescription = urlParams.get("error_description");
 
-    if (!lockRef.current && domain && clientId) {
-      lockRef.current = new Auth0Lock(clientId, domain, {
-        container: "auth0-lock-container",
-        theme: {
-          primaryColor: "#3b82f6",
-        },
-        languageDictionary: {
-          title: "Sign In to HoldMyTix",
-        },
-        auth: {
-          redirectUrl: `${window.location.origin}/callback`,
-          responseType: "code",
-          params: {
-            scope: "openid profile email",
-          },
-        },
-        socialButtonStyle: "big",
-        allowedConnections: [
-          "Username-Password-Authentication",
-          "google-oauth2",
-          "facebook",
-        ],
-        rememberLastLogin: true,
-        closable: false,
-        avatar: null,
-        mustAcceptTerms: false,
-      });
-
-      lockRef.current.on("authenticated", (authResult) => {
-        console.log("Auth0 Lock authenticated:", authResult);
-        // The Auth0Provider will handle the token exchange
-        window.location.href = `/callback?code=${authResult.accessToken}&state=${authResult.state || "default"}`;
-      });
-
-      lockRef.current.on("authorization_error", (error) => {
-        console.error("Auth0 Lock error:", error);
-        setError(error.error_description || "Authentication failed");
-        setShowEmbeddedLogin(false);
-      });
+    if (errorParam) {
+      setError(errorDescription || "Authentication failed");
     }
 
-    return () => {
-      if (lockRef.current) {
-        lockRef.current.hide();
-      }
-    };
-  }, []);
+    // Check for error from location state
+    if (location.state?.error) {
+      setError(location.state.error);
+    }
+  }, [location]);
 
   // Get return URL from location state or default to dashboard
   const returnTo = location.state?.returnTo || "/dashboard";
@@ -129,25 +82,21 @@ const SignInForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Use Auth0 Lock for embedded authentication
-      if (lockRef.current) {
-        lockRef.current.show();
-        setShowEmbeddedLogin(true);
-      } else {
-        // Fallback to redirect method
-        await loginWithRedirect({
-          authorizationParams: {
-            screen_hint: "login",
-            login_hint: data.email,
-            connection: "Username-Password-Authentication",
-          },
-          appState: {
-            returnTo,
-            email: data.email,
-            rememberMe: data.rememberMe,
-          },
-        });
-      }
+      // Use popup login instead of redirect to avoid leaving the page
+      await loginWithRedirect({
+        authorizationParams: {
+          screen_hint: "login",
+          login_hint: data.email,
+          connection: "Username-Password-Authentication",
+          prompt: "login",
+        },
+        appState: {
+          returnTo,
+          email: data.email,
+          rememberMe: data.rememberMe,
+        },
+        openUrl: false, // This prevents the redirect
+      });
     } catch (err: any) {
       console.error("Login error:", err);
       setError(
@@ -158,31 +107,15 @@ const SignInForm = () => {
     }
   };
 
-  const handleAuth0Login = () => {
-    if (lockRef.current) {
-      lockRef.current.show();
-      setShowEmbeddedLogin(true);
-    } else {
-      loginWithRedirect({
-        appState: { returnTo },
-      });
-    }
-  };
-
   const handleSocialLogin = (connection: string) => {
-    if (lockRef.current) {
-      lockRef.current.show({
-        allowedConnections: [connection],
-      });
-      setShowEmbeddedLogin(true);
-    } else {
-      loginWithRedirect({
-        authorizationParams: {
-          connection: connection,
-        },
-        appState: { returnTo },
-      });
-    }
+    setError(null);
+    loginWithRedirect({
+      authorizationParams: {
+        connection: connection,
+      },
+      appState: { returnTo },
+      openUrl: false, // This prevents the redirect
+    });
   };
 
   if (isLoading) {
@@ -290,30 +223,6 @@ const SignInForm = () => {
           </div>
         </div>
 
-        {/* Auth0 Lock Container - Hidden by default */}
-        {showEmbeddedLogin && (
-          <div className="mb-6">
-            <div
-              id="auth0-lock-container"
-              className="auth0-lock-container"
-            ></div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mt-2 w-full"
-              onClick={() => {
-                setShowEmbeddedLogin(false);
-                if (lockRef.current) {
-                  lockRef.current.hide();
-                }
-              }}
-            >
-              Use email/password form instead
-            </Button>
-          </div>
-        )}
-
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Authentication Error</AlertTitle>
@@ -399,18 +308,12 @@ const SignInForm = () => {
                 Forgot password?
               </a>
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || showEmbeddedLogin}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing In...
                 </>
-              ) : showEmbeddedLogin ? (
-                "Use form above to sign in"
               ) : (
                 "Sign In with Email"
               )}

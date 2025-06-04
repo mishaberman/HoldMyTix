@@ -28,6 +28,7 @@ import {
   sendSellerInstructions,
   sendBuyerInstructions,
   sendAdminNotification,
+  sendTicketTransferRequest,
 } from "@/lib/email";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -197,6 +198,19 @@ const SingleTicketTransfer = () => {
       await sendAdminNotification(
         formData.eventName,
         isSeller ? user?.email || "" : formData.sellerEmail,
+        isSeller ? formData.buyerEmail : user?.email || "",
+      );
+
+      // Send detailed ticket transfer request to info@holdmytix.com
+      await sendTicketTransferRequest(
+        formData.eventName,
+        `${formData.eventDate} at ${formData.eventTime}`,
+        formData.venue,
+        `${formData.ticketCount} ticket(s) - ${formData.ticketSection ? `Section ${formData.ticketSection}, ` : ""}${formData.ticketRow ? `Row ${formData.ticketRow}, ` : ""}${formData.ticketSeat ? `Seats ${formData.ticketSeat}` : "General Admission"}`,
+        parseFloat(formData.price) * parseInt(formData.ticketCount),
+        isSeller ? user?.name || "" : formData.sellerName,
+        isSeller ? user?.email || "" : formData.sellerEmail,
+        isSeller ? formData.buyerName : user?.name || "",
         isSeller ? formData.buyerEmail : user?.email || "",
       );
 

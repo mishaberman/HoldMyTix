@@ -2,6 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Auth0 Lock Styling */
+.auth0-lock-container {
+  .auth0-lock {
+    font-family: inherit;
+  }
+
+  .auth0-lock-widget {
+    box-shadow: none !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: calc(var(--radius) - 2px) !important;
+  }
+
+  .auth0-lock-header {
+    background: hsl(var(--background)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
+  }
+
+  .auth0-lock-title {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .auth0-lock-form {
+    background: hsl(var(--background)) !important;
+  }
+
+  .auth0-lock-input {
+    background: hsl(var(--background)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .auth0-lock-input:focus {
+    border-color: hsl(var(--ring)) !important;
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2) !important;
+  }
+
+  .auth0-lock-submit {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    border: none !important;
+  }
+
+  .auth0-lock-submit:hover {
+    background: hsl(var(--primary) / 0.9) !important;
+  }
+
+  .auth0-lock-social-button {
+    border: 1px solid hsl(var(--border)) !important;
+    background: hsl(var(--background)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .auth0-lock-social-button:hover {
+    background: hsl(var(--accent)) !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
