@@ -65,55 +65,95 @@ const mockTransactions = [
 // Listings API
 export const getListings = async (filters?: any) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Fetch from Supabase first
+    let query = supabase.from("listings").select("*").eq("status", "active");
 
-    let filteredListings = [...mockListings];
-
-    // Apply filters if provided
-    if (filters) {
-      if (filters.eventType && filters.eventType !== "all") {
-        filteredListings = filteredListings.filter((listing) =>
-          listing.event_name
-            .toLowerCase()
-            .includes(filters.eventType.toLowerCase()),
-        );
-      }
-
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
-        filteredListings = filteredListings.filter(
-          (listing) =>
-            listing.event_name.toLowerCase().includes(query) ||
-            listing.venue.toLowerCase().includes(query) ||
-            listing.location.toLowerCase().includes(query),
-        );
-      }
-
-      // Apply sorting
-      if (filters.sortBy) {
-        switch (filters.sortBy) {
-          case "date":
-            filteredListings.sort(
-              (a, b) =>
-                new Date(a.event_date).getTime() -
-                new Date(b.event_date).getTime(),
-            );
-            break;
-          case "price-low":
-            filteredListings.sort((a, b) => a.price - b.price);
-            break;
-          case "price-high":
-            filteredListings.sort((a, b) => b.price - a.price);
-            break;
-        }
-      }
+    // Apply search filter
+    if (filters?.searchQuery) {
+      const searchQuery = filters.searchQuery.toLowerCase();
+      query = query.or(
+        `event_name.ilike.%${searchQuery}%,venue.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`,
+      );
     }
 
-    return { data: filteredListings, error: null };
+    // Apply event type filter
+    if (filters?.eventType && filters.eventType !== "all") {
+      query = query.ilike("event_name", `%${filters.eventType}%`);
+    }
+
+    // Apply sorting
+    if (filters?.sortBy) {
+      switch (filters.sortBy) {
+        case "date":
+          query = query.order("event_date", { ascending: true });
+          break;
+        case "price-low":
+          query = query.order("price", { ascending: true });
+          break;
+        case "price-high":
+          query = query.order("price", { ascending: false });
+          break;
+        default:
+          query = query.order("created_at", { ascending: false });
+      }
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.warn("Supabase error, falling back to mock data:", error);
+      // Fallback to mock data if Supabase fails
+      let filteredListings = [...mockListings];
+
+      // Apply filters to mock data
+      if (filters) {
+        if (filters.eventType && filters.eventType !== "all") {
+          filteredListings = filteredListings.filter((listing) =>
+            listing.event_name
+              .toLowerCase()
+              .includes(filters.eventType.toLowerCase()),
+          );
+        }
+
+        if (filters.searchQuery) {
+          const query = filters.searchQuery.toLowerCase();
+          filteredListings = filteredListings.filter(
+            (listing) =>
+              listing.event_name.toLowerCase().includes(query) ||
+              listing.venue.toLowerCase().includes(query) ||
+              listing.location.toLowerCase().includes(query),
+          );
+        }
+
+        // Apply sorting
+        if (filters.sortBy) {
+          switch (filters.sortBy) {
+            case "date":
+              filteredListings.sort(
+                (a, b) =>
+                  new Date(a.event_date).getTime() -
+                  new Date(b.event_date).getTime(),
+              );
+              break;
+            case "price-low":
+              filteredListings.sort((a, b) => a.price - b.price);
+              break;
+            case "price-high":
+              filteredListings.sort((a, b) => b.price - a.price);
+              break;
+          }
+        }
+      }
+
+      return { data: filteredListings, error: null };
+    }
+
+    return { data: data || [], error: null };
   } catch (error) {
     console.error("Error fetching listings:", error);
-    return { data: null, error };
+    return { data: mockListings, error: null };
   }
 };
 
@@ -135,17 +175,22 @@ export const getListingById = async (id: string) => {
 
 export const createListing = async (listingData: any) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from("listings")
+      .insert({
+        ...listingData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const newListing = {
-      id: `listing-${Date.now()}`,
-      ...listingData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    if (error) {
+      throw error;
+    }
 
-    mockListings.push(newListing);
-    return { data: [newListing], error: null };
+    return { data, error: null };
   } catch (error) {
     console.error("Error creating listing:", error);
     return { data: null, error };
@@ -212,10 +257,14 @@ export const getTransactionById = async (id: string) => {
 
 export const createTransaction = async (transactionData: any) => {
   try {
-    // Insert into Supabase
+    // Insert into Supabase ticket_transfers table
     const { data, error } = await supabase
       .from("ticket_transfers")
-      .insert(transactionData)
+      .insert({
+        ...transactionData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .select()
       .single();
 

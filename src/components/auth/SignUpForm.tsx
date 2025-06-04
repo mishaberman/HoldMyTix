@@ -82,14 +82,16 @@ const SignUpForm = () => {
         throw new Error(auth0Result.error);
       }
 
-      // Create user in Supabase
-      const { error: supabaseError } = await supabase.from("users").insert({
-        id: auth0Result.data._id || `auth0|${Date.now()}`,
-        email: data.email,
-        full_name: data.name,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      // Create user in Supabase using the function
+      const { data: supabaseData, error: supabaseError } = await supabase.rpc(
+        "create_user_if_not_exists",
+        {
+          user_id: auth0Result.data._id || `auth0|${Date.now()}`,
+          user_email: data.email,
+          user_name: data.name,
+          user_avatar: null,
+        },
+      );
 
       if (supabaseError) {
         console.warn("Failed to create user in Supabase:", supabaseError);
