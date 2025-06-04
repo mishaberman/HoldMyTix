@@ -42,6 +42,8 @@
     "@radix-ui/react-toggle": "^1.0.3",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@supabase/supabase-js": "^2.45.6",
+    "@types/auth0-lock": "^11.27.9",
+    "auth0-lock": "^14.0.0",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -71,8 +73,8 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "3.4.1",
+    "tempo-devtools": "^2.0.106",
     "typescript": "^5.8.2",
-    "vite": "^6.2.3",
-    "tempo-devtools": "^2.0.106"
+    "vite": "^6.2.3"
   }
 }

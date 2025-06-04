@@ -66,6 +66,7 @@ export const Auth0Provider = ({ children }: Auth0ProviderProps) => {
       authorizationParams={{
         redirect_uri: redirectUri,
         scope: "openid profile email",
+        audience: `https://${domain}/api/v2/`,
       }}
       onRedirectCallback={onRedirectCallback}
       useRefreshTokens={true}
