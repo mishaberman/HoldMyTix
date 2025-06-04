@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/supabase";
 
@@ -67,7 +66,7 @@ export const getListingById = async (id: string) => {
 export const createListing = async (listingData: Partial<TicketTransferInsert>) => {
   try {
     const now = new Date().toISOString();
-    
+
     // Ensure required fields are present
     if (!listingData.event_name || !listingData.venue || !listingData.price) {
       throw new Error("Missing required fields: event_name, venue, and price are required");
@@ -176,60 +175,43 @@ export const getTransactionById = async (id: string) => {
   }
 };
 
-export const createTransaction = async (transactionData: Partial<TicketTransferInsert>) => {
+// Create a new transaction
+export const createTransaction = async (transactionData: {
+  listing_id: string
+  buyer_id: string
+  seller_id: string
+  amount: number
+  status?: 'pending' | 'payment_pending' | 'tickets_pending' | 'completed' | 'cancelled'
+  payment_method?: string
+  created_at?: string
+}) => {
   try {
-    const now = new Date().toISOString();
-    const expirationTime = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour from now
-    
-    // Ensure required fields are present
-    if (!transactionData.event_name || !transactionData.venue || !transactionData.price) {
-      throw new Error("Missing required fields: event_name, venue, and price are required");
-    }
+    console.log('Creating transaction with data:', transactionData)
 
-    const newTransaction: TicketTransferInsert = {
-      contract_id: `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      event_name: transactionData.event_name,
-      event_date: transactionData.event_date || new Date().toISOString(),
-      venue: transactionData.venue,
-      price: transactionData.price,
-      ticket_quantity: transactionData.ticket_quantity || 1,
-      status: "pending",
-      payment_verified: false,
-      tickets_verified: false,
-      time_remaining: 60,
-      expiration_time: expirationTime,
-      seller_id: transactionData.seller_id || null,
-      buyer_id: transactionData.buyer_id || null,
-      seller_name: transactionData.seller_name || null,
-      seller_email: transactionData.seller_email || null,
-      buyer_name: transactionData.buyer_name || null,
-      buyer_email: transactionData.buyer_email || null,
-      seat_details: transactionData.seat_details || null,
-      payment_method: transactionData.payment_method || null,
-      ticket_provider: transactionData.ticket_provider || null,
-      ticket_notes: transactionData.ticket_notes || null,
-      created_at: now,
-      updated_at: now,
-    };
+    const transactionWithDefaults = {
+      ...transactionData,
+      status: transactionData.status || 'pending',
+      created_at: transactionData.created_at || new Date().toISOString()
+    }
 
     const { data, error } = await supabase
-      .from("ticket_transfers")
-      .insert(newTransaction)
-      .select()
-      .single();
+      .from('transactions')
+      .insert([transactionWithDefaults])
+      .select('*')
+      .single()
 
     if (error) {
-      console.error("Supabase error in createTransaction:", error);
-      throw error;
+      console.error('Supabase error creating transaction:', error)
+      throw error
     }
 
-    console.log("Successfully created transaction:", data);
-    return { data, error: null };
+    console.log('Transaction created successfully:', data)
+    return { data, error: null }
   } catch (error) {
-    console.error("Error creating transaction:", error);
-    return { data: null, error };
+    console.error('Error creating transaction:', error)
+    return { data: null, error }
   }
-};
+}
 
 export const updateTransaction = async (id: string, updates: Partial<TicketTransferUpdate>) => {
   try {
@@ -386,6 +368,44 @@ export const updateEmailNotification = async (id: string, updates: {
   }
 };
 
-export const createTicketTransfer = async (transferData: Partial<TicketTransferInsert>) => {
-  return createTransaction(transferData);
-};
+// Create a new ticket transfer request
+export const createTicketTransfer = async (transferData: {
+  buyer_name: string
+  buyer_email: string
+  seller_name: string
+  seller_email: string
+  event_name: string
+  event_date: string
+  venue: string
+  ticket_details: string
+  price: number
+  payment_method: string
+  status?: string
+}) => {
+  try {
+    console.log('Creating ticket transfer with data:', transferData)
+
+    const transferWithDefaults = {
+      ...transferData,
+      status: transferData.status || 'pending',
+      created_at: new Date().toISOString()
+    }
+
+    const { data, error } = await supabase
+      .from('ticket_transfers')
+      .insert([transferWithDefaults])
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('Supabase error creating ticket transfer:', error)
+      throw error
+    }
+
+    console.log('Ticket transfer created successfully:', data)
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error creating ticket transfer:', error)
+    return { data: null, error }
+  }
+}
