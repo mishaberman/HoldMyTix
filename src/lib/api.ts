@@ -33,13 +33,14 @@ export const getListings = async (filters?: {
     const { data, error } = await query;
 
     if (error) {
+      console.error("Supabase error in getListings:", error);
       throw error;
     }
 
     return { data: data || [], error: null };
   } catch (error) {
     console.error("Error fetching listings:", error);
-    return { data: null, error };
+    return { data: [], error };
   }
 };
 
@@ -52,6 +53,7 @@ export const getListingById = async (id: string) => {
       .single();
 
     if (error) {
+      console.error("Supabase error in getListingById:", error);
       throw error;
     }
 
@@ -65,24 +67,29 @@ export const getListingById = async (id: string) => {
 export const createListing = async (listingData: Partial<TicketTransferInsert>) => {
   try {
     const now = new Date().toISOString();
+    
+    // Ensure required fields are present
+    if (!listingData.event_name || !listingData.venue || !listingData.price) {
+      throw new Error("Missing required fields: event_name, venue, and price are required");
+    }
+
     const newListing: TicketTransferInsert = {
-      contract_id: `contract-${Date.now()}`,
-      event_name: listingData.event_name || "",
+      contract_id: `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      event_name: listingData.event_name,
       event_date: listingData.event_date || new Date().toISOString(),
-      venue: listingData.venue || "",
-      price: listingData.price || 0,
+      venue: listingData.venue,
+      price: listingData.price,
       ticket_quantity: listingData.ticket_quantity || 1,
       status: "active",
-      seller_id: listingData.seller_id,
-      seller_name: listingData.seller_name,
-      seller_email: listingData.seller_email,
-      seat_details: listingData.seat_details,
-      payment_method: listingData.payment_method,
-      ticket_provider: listingData.ticket_provider,
-      ticket_notes: listingData.ticket_notes,
+      seller_id: listingData.seller_id || null,
+      seller_name: listingData.seller_name || null,
+      seller_email: listingData.seller_email || null,
+      seat_details: listingData.seat_details || null,
+      payment_method: listingData.payment_method || null,
+      ticket_provider: listingData.ticket_provider || null,
+      ticket_notes: listingData.ticket_notes || null,
       created_at: now,
       updated_at: now,
-      ...listingData,
     };
 
     const { data, error } = await supabase
@@ -92,9 +99,11 @@ export const createListing = async (listingData: Partial<TicketTransferInsert>) 
       .single();
 
     if (error) {
+      console.error("Supabase error in createListing:", error);
       throw error;
     }
 
+    console.log("Successfully created listing:", data);
     return { data, error: null };
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -115,6 +124,7 @@ export const updateListing = async (id: string, updates: Partial<TicketTransferU
       .single();
 
     if (error) {
+      console.error("Supabase error in updateListing:", error);
       throw error;
     }
 
@@ -135,13 +145,14 @@ export const getUserTransactions = async (userId: string) => {
       .order("created_at", { ascending: false });
 
     if (error) {
+      console.error("Supabase error in getUserTransactions:", error);
       throw error;
     }
 
     return { data: data || [], error: null };
   } catch (error) {
     console.error(`Error fetching transactions for user ${userId}:`, error);
-    return { data: null, error };
+    return { data: [], error };
   }
 };
 
@@ -154,6 +165,7 @@ export const getTransactionById = async (id: string) => {
       .single();
 
     if (error) {
+      console.error("Supabase error in getTransactionById:", error);
       throw error;
     }
 
@@ -169,21 +181,35 @@ export const createTransaction = async (transactionData: Partial<TicketTransferI
     const now = new Date().toISOString();
     const expirationTime = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour from now
     
+    // Ensure required fields are present
+    if (!transactionData.event_name || !transactionData.venue || !transactionData.price) {
+      throw new Error("Missing required fields: event_name, venue, and price are required");
+    }
+
     const newTransaction: TicketTransferInsert = {
-      contract_id: `contract-${Date.now()}`,
-      event_name: transactionData.event_name || "",
+      contract_id: `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      event_name: transactionData.event_name,
       event_date: transactionData.event_date || new Date().toISOString(),
-      venue: transactionData.venue || "",
-      price: transactionData.price || 0,
+      venue: transactionData.venue,
+      price: transactionData.price,
       ticket_quantity: transactionData.ticket_quantity || 1,
       status: "pending",
       payment_verified: false,
       tickets_verified: false,
       time_remaining: 60,
       expiration_time: expirationTime,
+      seller_id: transactionData.seller_id || null,
+      buyer_id: transactionData.buyer_id || null,
+      seller_name: transactionData.seller_name || null,
+      seller_email: transactionData.seller_email || null,
+      buyer_name: transactionData.buyer_name || null,
+      buyer_email: transactionData.buyer_email || null,
+      seat_details: transactionData.seat_details || null,
+      payment_method: transactionData.payment_method || null,
+      ticket_provider: transactionData.ticket_provider || null,
+      ticket_notes: transactionData.ticket_notes || null,
       created_at: now,
       updated_at: now,
-      ...transactionData,
     };
 
     const { data, error } = await supabase
@@ -193,9 +219,11 @@ export const createTransaction = async (transactionData: Partial<TicketTransferI
       .single();
 
     if (error) {
+      console.error("Supabase error in createTransaction:", error);
       throw error;
     }
 
+    console.log("Successfully created transaction:", data);
     return { data, error: null };
   } catch (error) {
     console.error("Error creating transaction:", error);
@@ -216,6 +244,7 @@ export const updateTransaction = async (id: string, updates: Partial<TicketTrans
       .single();
 
     if (error) {
+      console.error("Supabase error in updateTransaction:", error);
       throw error;
     }
 
@@ -227,19 +256,33 @@ export const updateTransaction = async (id: string, updates: Partial<TicketTrans
 };
 
 // DocuSign Agreements API
-export const createDocuSignAgreement = async (agreementData: any) => {
+export const createDocuSignAgreement = async (agreementData: {
+  transaction_id?: string;
+  envelope_id?: string;
+  status?: string;
+  document_url?: string;
+  seller_status?: string;
+  buyer_status?: string;
+}) => {
   try {
+    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("docusign_agreements")
       .insert({
-        ...agreementData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        transaction_id: agreementData.transaction_id || null,
+        envelope_id: agreementData.envelope_id || null,
+        status: agreementData.status || 'sent',
+        document_url: agreementData.document_url || null,
+        seller_status: agreementData.seller_status || 'sent',
+        buyer_status: agreementData.buyer_status || 'sent',
+        created_at: now,
+        updated_at: now,
       })
       .select()
       .single();
 
     if (error) {
+      console.error("Supabase error in createDocuSignAgreement:", error);
       throw error;
     }
 
@@ -250,7 +293,14 @@ export const createDocuSignAgreement = async (agreementData: any) => {
   }
 };
 
-export const updateDocuSignAgreement = async (id: string, updates: any) => {
+export const updateDocuSignAgreement = async (id: string, updates: {
+  transaction_id?: string;
+  envelope_id?: string;
+  status?: string;
+  document_url?: string;
+  seller_status?: string;
+  buyer_status?: string;
+}) => {
   try {
     const { data, error } = await supabase
       .from("docusign_agreements")
@@ -263,6 +313,7 @@ export const updateDocuSignAgreement = async (id: string, updates: any) => {
       .single();
 
     if (error) {
+      console.error("Supabase error in updateDocuSignAgreement:", error);
       throw error;
     }
 
@@ -274,18 +325,30 @@ export const updateDocuSignAgreement = async (id: string, updates: any) => {
 };
 
 // Email Notifications API
-export const createEmailNotification = async (emailData: any) => {
+export const createEmailNotification = async (emailData: {
+  transaction_id?: string;
+  recipient_id?: string;
+  email_type: string;
+  status?: string;
+  message_id?: string;
+}) => {
   try {
+    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("email_notifications")
       .insert({
-        ...emailData,
-        created_at: new Date().toISOString(),
+        transaction_id: emailData.transaction_id || null,
+        recipient_id: emailData.recipient_id || null,
+        email_type: emailData.email_type,
+        status: emailData.status || 'sent',
+        message_id: emailData.message_id || null,
+        created_at: now,
       })
       .select()
       .single();
 
     if (error) {
+      console.error("Supabase error in createEmailNotification:", error);
       throw error;
     }
 
@@ -296,7 +359,13 @@ export const createEmailNotification = async (emailData: any) => {
   }
 };
 
-export const updateEmailNotification = async (id: string, updates: any) => {
+export const updateEmailNotification = async (id: string, updates: {
+  transaction_id?: string;
+  recipient_id?: string;
+  email_type?: string;
+  status?: string;
+  message_id?: string;
+}) => {
   try {
     const { data, error } = await supabase
       .from("email_notifications")
@@ -306,6 +375,7 @@ export const updateEmailNotification = async (id: string, updates: any) => {
       .single();
 
     if (error) {
+      console.error("Supabase error in updateEmailNotification:", error);
       throw error;
     }
 
