@@ -210,20 +210,20 @@ const SingleTicketTransfer = () => {
         buyer_status: "sent",
       };
 
-      await createDocuSignAgreement(docusignData);
+    //  await createDocuSignAgreement(docusignData);
 
       // Send emails using the mock functions
       if (isSeller) {
         // Send instructions to buyer
-        const buyerEmailResult = await sendBuyerInstructions(
+       /* const buyerEmailResult = await sendBuyerInstructions(
           formData.buyerEmail,
           user?.name || "Seller",
           formData.eventName,
           parseFloat(formData.price),
-        );
+        );*/
 
         // Store email notification
-        await createEmailNotification({
+      /*  await createEmailNotification({
           transaction_id: transaction.id,
           recipient_id: null,
           email_type: "buyer_instructions",
@@ -253,7 +253,7 @@ const SingleTicketTransfer = () => {
         formData.eventName,
         isSeller ? user?.email || "" : formData.sellerEmail,
         isSeller ? formData.buyerEmail : user?.email || "",
-      );
+      ); 
 
       // Send detailed ticket transfer request to info@holdmytix.com
       console.log("About to send ticket transfer request email");
@@ -275,7 +275,7 @@ const SingleTicketTransfer = () => {
         console.warn("Failed to send email notification:", emailResult.error);
         // Don't fail the entire process if email fails
       }
-
+*/
       // Save to database
       console.log("Form data:", formData);
 
