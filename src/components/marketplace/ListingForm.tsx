@@ -81,16 +81,17 @@ const ListingForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      eventName: "",
-      eventDate: "",
-      venue: "",
-      seatInfo: "",
-      quantity: "1",
-      price: "",
-      description: "",
+      eventName: "Bad Bunny - World's Hottest Tour",
+      eventDate: "2024-09-30",
+      venue: "SoFi Stadium, Los Angeles",
+      seatInfo: "Section 230, Row D, Seats 15-17",
+      quantity: "3",
+      price: "280",
+      description:
+        "Three seats together with a great view! Mobile transfer through Ticketmaster.",
       paymentMethods: {
-        venmo: false,
-        zelle: false,
+        venmo: true,
+        zelle: true,
         paypal: false,
         cashapp: false,
       },

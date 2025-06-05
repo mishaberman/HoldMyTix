@@ -41,30 +41,30 @@ const SingleTicketTransfer = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
+  // Form state with placeholder data for easy testing
   const [formData, setFormData] = useState({
     // Event details
-    eventName: "",
-    eventDate: "",
-    eventTime: "",
-    venue: "",
-    ticketCount: "1",
-    ticketSection: "",
-    ticketRow: "",
-    ticketSeat: "",
+    eventName: "Taylor Swift - The Eras Tour",
+    eventDate: "2024-08-15",
+    eventTime: "19:00",
+    venue: "SoFi Stadium, Los Angeles",
+    ticketCount: "2",
+    ticketSection: "134",
+    ticketRow: "G",
+    ticketSeat: "12-13",
     ticketProvider: "ticketmaster",
-    ticketNotes: "",
+    ticketNotes: "Mobile transfer available, great view of the stage!",
 
     // Price details
-    price: "",
+    price: "350",
 
     // Seller details (when user is buyer)
-    sellerName: "",
-    sellerEmail: "",
+    sellerName: "John Doe",
+    sellerEmail: "john.doe@example.com",
 
     // Buyer details (when user is seller)
-    buyerName: "",
-    buyerEmail: "",
+    buyerName: "Jane Smith",
+    buyerEmail: "jane.smith@example.com",
   });
 
   const handleChange = (
@@ -96,29 +96,45 @@ const SingleTicketTransfer = () => {
         createEmailNotification,
       } = await import("@/lib/api");
 
-      // Prepare data for transaction
+      // Prepare data for transaction with ALL form fields
       const transactionData = {
         contract_id: `TIX-${Math.floor(Math.random() * 100000)}`,
         seller_id: isSeller ? user?.sub : null,
         buyer_id: isSeller ? null : user?.sub,
+
+        // Event information
         event_name: formData.eventName,
         event_date: `${formData.eventDate}T${formData.eventTime}:00`,
+        event_time: formData.eventTime,
         venue: formData.venue,
+
+        // Ticket information
+        ticket_quantity: parseInt(formData.ticketCount),
+        ticket_section: formData.ticketSection,
+        ticket_row: formData.ticketRow,
+        ticket_seat: formData.ticketSeat,
         seat_details:
           `${formData.ticketSection ? `Section ${formData.ticketSection}, ` : ""}${formData.ticketRow ? `Row ${formData.ticketRow}, ` : ""}${formData.ticketSeat ? `Seats ${formData.ticketSeat}` : ""}`.trim() ||
           "General Admission",
-        ticket_quantity: parseInt(formData.ticketCount),
+        ticket_provider: formData.ticketProvider,
+        ticket_notes: formData.ticketNotes,
+
+        // Price and payment
         price: parseFloat(formData.price) * parseInt(formData.ticketCount),
         payment_method: isSeller ? "TBD" : "Venmo",
+
+        // Status tracking
         status: "pending",
         payment_verified: false,
         tickets_verified: false,
         time_remaining: 60,
         expiration_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        ticket_provider: formData.ticketProvider,
-        ticket_notes: formData.ticketNotes,
+
+        // Seller information
         seller_name: isSeller ? user?.name || "" : formData.sellerName,
         seller_email: isSeller ? user?.email || "" : formData.sellerEmail,
+
+        // Buyer information
         buyer_name: isSeller ? formData.buyerName : user?.name || "",
         buyer_email: isSeller ? formData.buyerEmail : user?.email || "",
       };

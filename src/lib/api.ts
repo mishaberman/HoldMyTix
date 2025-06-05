@@ -257,7 +257,9 @@ export const getTransactionById = async (id: string) => {
 
 export const createTransaction = async (transactionData: any) => {
   try {
-    // Insert into Supabase ticket_transfers table
+    console.log("Creating transaction with data:", transactionData);
+
+    // Insert into Supabase ticket_transfers table with all fields
     const { data, error } = await supabase
       .from("ticket_transfers")
       .insert({
@@ -269,9 +271,11 @@ export const createTransaction = async (transactionData: any) => {
       .single();
 
     if (error) {
+      console.error("Supabase error:", error);
       throw error;
     }
 
+    console.log("Transaction created successfully:", data);
     return { data, error: null };
   } catch (error) {
     console.error("Error creating transaction:", error);
