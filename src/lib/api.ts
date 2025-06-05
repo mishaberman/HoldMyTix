@@ -231,6 +231,55 @@ export const createTransaction = async (transactionData: any) => {
   try {
     console.log("Creating transaction with data:", transactionData);
 
+    // Ensure user exists in users table before creating transaction
+    if (transactionData.seller_id) {
+      const { data: existingUser, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", transactionData.seller_id)
+        .single();
+
+      if (userError && userError.code === "PGRST116") {
+        // User doesn't exist, create them
+        console.log("Creating missing seller user:", transactionData.seller_id);
+        const { error: createUserError } = await supabase.from("users").insert({
+          id: transactionData.seller_id,
+          email: transactionData.seller_email || "unknown@example.com",
+          full_name: transactionData.seller_name || "Unknown User",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        if (createUserError) {
+          console.error("Error creating seller user:", createUserError);
+        }
+      }
+    }
+
+    if (transactionData.buyer_id) {
+      const { data: existingUser, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", transactionData.buyer_id)
+        .single();
+
+      if (userError && userError.code === "PGRST116") {
+        // User doesn't exist, create them
+        console.log("Creating missing buyer user:", transactionData.buyer_id);
+        const { error: createUserError } = await supabase.from("users").insert({
+          id: transactionData.buyer_id,
+          email: transactionData.buyer_email || "unknown@example.com",
+          full_name: transactionData.buyer_name || "Unknown User",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        if (createUserError) {
+          console.error("Error creating buyer user:", createUserError);
+        }
+      }
+    }
+
     // Insert into Supabase ticket_transfers table with all fields
     const { data, error } = await supabase
       .from("ticket_transfers")
@@ -350,7 +399,7 @@ export const createTicketTransfer = async (transferData: {
     console.log("Creating ticket transfer with data:", transferData);
 
     const now = new Date().toISOString();
-    const transferWithDefaults: TicketTransferInsert = {
+    const transferWithDefaults = {
       contract_id: `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       buyer_name: transferData.buyer_name,
       buyer_email: transferData.buyer_email,

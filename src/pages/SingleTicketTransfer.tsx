@@ -28,8 +28,9 @@ import {
   sendSellerInstructions,
   sendBuyerInstructions,
   sendTicketTransferRequest,
-} from "@/lib/email"
-import { createTicketTransfer } from "@/lib/api"
+} from "@/lib/email";
+import { createTicketTransfer } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -139,6 +140,35 @@ const SingleTicketTransfer = () => {
         buyer_email: isSeller ? formData.buyerEmail : user?.email || "",
       };
 
+      // Ensure current user exists in users table first
+      if (user?.sub) {
+        console.log("Ensuring user exists in database:", user.sub);
+        const { data: existingUser, error: userCheckError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", user.sub)
+          .single();
+
+        if (userCheckError && userCheckError.code === "PGRST116") {
+          // User doesn't exist, create them
+          console.log("Creating current user in database:", user.sub);
+          const { error: createUserError } = await supabase
+            .from("users")
+            .insert({
+              id: user.sub,
+              email: user.email || "unknown@example.com",
+              full_name: user.name || "Unknown User",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+
+          if (createUserError) {
+            console.error("Error creating current user:", createUserError);
+            throw new Error("Failed to create user record");
+          }
+        }
+      }
+
       // Create transaction
       const { data: transaction, error: transactionError } =
         await createTransaction(transactionData);
@@ -247,7 +277,7 @@ const SingleTicketTransfer = () => {
       }
 
       // Save to database
-      console.log('Form data:', formData)
+      console.log("Form data:", formData);
 
       const transferResult = await createTicketTransfer({
         buyer_name: formData.buyerName,
@@ -260,18 +290,21 @@ const SingleTicketTransfer = () => {
         ticket_details: formData.ticketNotes,
         price: parseFloat(formData.price),
         payment_method: "Venmo", // TODO: Fix this
-        status: 'pending'
-      })
+        status: "pending",
+      });
 
       if (transferResult.error) {
-        console.error('Failed to save transfer to database:', transferResult.error)
+        console.error(
+          "Failed to save transfer to database:",
+          transferResult.error,
+        );
         // toast({
         //   title: "Database Error",
         //   description: "Transfer was initiated but failed to save to database. Please contact support.",
         //   variant: "destructive",
         // })
       } else {
-        console.log('Transfer saved to database:', transferResult.data)
+        console.log("Transfer saved to database:", transferResult.data);
       }
 
       // Show success message and redirect after delay

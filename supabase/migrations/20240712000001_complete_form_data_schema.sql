@@ -1,6 +1,9 @@
 -- Complete schema update to match all form data from website
 -- This ensures all form fields are properly captured in the database
 
+-- Enable UUID extension for generating UUIDs
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Drop existing tables to recreate with complete schema
 DROP TABLE IF EXISTS public.payment_records CASCADE;
 DROP TABLE IF EXISTS public.email_notifications CASCADE;
