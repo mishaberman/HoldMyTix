@@ -1,70 +1,18 @@
 import { supabase } from "@/lib/supabase";
+import type { Database } from "@/types/supabase";
 
-// API functions using Supabase for real data persistence
+type TicketTransfer = Database['public']['Tables']['ticket_transfers']['Row'];
+type TicketTransferInsert = Database['public']['Tables']['ticket_transfers']['Insert'];
+type TicketTransferUpdate = Database['public']['Tables']['ticket_transfers']['Update'];
 
-// Mock data for development
-const mockListings = [
-  {
-    id: "1",
-    event_name: "Taylor Swift - The Eras Tour",
-    event_date: "2023-08-15T19:00:00",
-    venue: "SoFi Stadium",
-    location: "Los Angeles, CA",
-    price: 350,
-    quantity: 2,
-    section: "134",
-    row: "G",
-    seats: "12-13",
-    payment_methods: ["Venmo", "PayPal"],
-    verified: true,
-    status: "active",
-    image_url:
-      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
-    seller_id: "user1",
-  },
-  {
-    id: "2",
-    event_name: "Lakers vs. Warriors",
-    event_date: "2023-08-20T18:30:00",
-    venue: "Crypto.com Arena",
-    location: "Los Angeles, CA",
-    price: 175,
-    quantity: 4,
-    section: "217",
-    row: "C",
-    seats: "5-8",
-    payment_methods: ["Venmo", "Zelle"],
-    verified: true,
-    status: "active",
-    image_url:
-      "https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=800&q=80",
-    seller_id: "user2",
-  },
-];
-
-const mockTransactions = [
-  {
-    id: "tx-1",
-    contract_id: "TIX-12345",
-    event_name: "Taylor Swift | The Eras Tour",
-    event_date: "2023-08-15T19:00:00",
-    venue: "SoFi Stadium, Los Angeles",
-    seat_details: "Section 134, Row G, Seats 12-13",
-    ticket_quantity: 2,
-    price: 700,
-    payment_method: "Venmo",
-    status: "active",
-    payment_verified: false,
-    tickets_verified: true,
-    seller_id: "user1",
-    buyer_id: "user2",
-    created_at: "2023-07-20T10:00:00Z",
-  },
-];
-
-// Listings API
-export const getListings = async (filters?: any) => {
+// Listings API - using ticket_transfers table as the source
+export const getListings = async (filters?: {
+  eventType?: string;
+  sortBy?: string;
+  searchQuery?: string;
+}) => {
   try {
+<<<<<<< HEAD
     // Fetch from Supabase first
     let query = supabase.from("listings").select("*").eq("status", "active");
 
@@ -154,27 +102,62 @@ export const getListings = async (filters?: any) => {
   } catch (error) {
     console.error("Error fetching listings:", error);
     return { data: mockListings, error: null };
+=======
+    let query = supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("status", "active");
+
+    if (filters?.searchQuery) {
+      query = query.or(`event_name.ilike.%${filters.searchQuery}%,venue.ilike.%${filters.searchQuery}%`);
+    }
+
+    if (filters?.sortBy === "price") {
+      query = query.order("price", { ascending: true });
+    } else if (filters?.sortBy === "date") {
+      query = query.order("event_date", { ascending: true });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Supabase error in getListings:", error);
+      throw error;
+    }
+
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error("Error fetching listings:", error);
+    return { data: [], error };
+>>>>>>> c3cb5f07e8dcbeec8ead0a9cbc88be0a050b0184
   }
 };
 
 export const getListingById = async (id: string) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    const listing = mockListings.find((l) => l.id === id);
-    if (!listing) {
-      throw new Error("Listing not found");
+    if (error) {
+      console.error("Supabase error in getListingById:", error);
+      throw error;
     }
 
-    return { data: listing, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error fetching listing ${id}:`, error);
     return { data: null, error };
   }
 };
 
-export const createListing = async (listingData: any) => {
+export const createListing = async (listingData: Partial<TicketTransferInsert>) => {
   try {
+<<<<<<< HEAD
     // Insert into Supabase
     const { data, error } = await supabase
       .from("listings")
@@ -190,6 +173,46 @@ export const createListing = async (listingData: any) => {
       throw error;
     }
 
+=======
+    const now = new Date().toISOString();
+
+    // Ensure required fields are present
+    if (!listingData.event_name || !listingData.venue || !listingData.price) {
+      throw new Error("Missing required fields: event_name, venue, and price are required");
+    }
+
+    const newListing: TicketTransferInsert = {
+      contract_id: `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      event_name: listingData.event_name,
+      event_date: listingData.event_date || new Date().toISOString(),
+      venue: listingData.venue,
+      price: listingData.price,
+      ticket_quantity: listingData.ticket_quantity || 1,
+      status: "active",
+      seller_id: listingData.seller_id || null,
+      seller_name: listingData.seller_name || null,
+      seller_email: listingData.seller_email || null,
+      seat_details: listingData.seat_details || null,
+      payment_method: listingData.payment_method || null,
+      ticket_provider: listingData.ticket_provider || null,
+      ticket_notes: listingData.ticket_notes || null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .insert(newListing)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase error in createListing:", error);
+      throw error;
+    }
+
+    console.log("Successfully created listing:", data);
+>>>>>>> c3cb5f07e8dcbeec8ead0a9cbc88be0a050b0184
     return { data, error: null };
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -197,22 +220,24 @@ export const createListing = async (listingData: any) => {
   }
 };
 
-export const updateListing = async (id: string, updates: any) => {
+export const updateListing = async (id: string, updates: Partial<TicketTransferUpdate>) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
 
-    const listingIndex = mockListings.findIndex((l) => l.id === id);
-    if (listingIndex === -1) {
-      throw new Error("Listing not found");
+    if (error) {
+      console.error("Supabase error in updateListing:", error);
+      throw error;
     }
 
-    mockListings[listingIndex] = {
-      ...mockListings[listingIndex],
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    return { data: [mockListings[listingIndex]], error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error updating listing ${id}:`, error);
     return { data: null, error };
@@ -222,41 +247,85 @@ export const updateListing = async (id: string, updates: any) => {
 // Transactions API
 export const getUserTransactions = async (userId: string) => {
   try {
-    // Fetch from Supabase
     const { data, error } = await supabase
       .from("ticket_transfers")
       .select("*")
-      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`);
+      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`)
+      .order("created_at", { ascending: false });
 
     if (error) {
+      console.error("Supabase error in getUserTransactions:", error);
       throw error;
     }
 
     return { data: data || [], error: null };
   } catch (error) {
     console.error(`Error fetching transactions for user ${userId}:`, error);
-    return { data: null, error };
+    return { data: [], error };
   }
 };
 
 export const getTransactionById = async (id: string) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    const transaction = mockTransactions.find((tx) => tx.id === id);
-    if (!transaction) {
-      throw new Error("Transaction not found");
+    if (error) {
+      console.error("Supabase error in getTransactionById:", error);
+      throw error;
     }
 
-    return { data: transaction, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error(`Error fetching transaction ${id}:`, error);
     return { data: null, error };
   }
 };
 
-export const createTransaction = async (transactionData: any) => {
+// Create a new transaction
+export const createTransaction = async (transactionData: {
+  listing_id: string
+  buyer_id: string
+  seller_id: string
+  amount: number
+  status?: 'pending' | 'payment_pending' | 'tickets_pending' | 'completed' | 'cancelled'
+  payment_method?: string
+  created_at?: string
+}) => {
   try {
+    console.log('Creating transaction with data:', transactionData)
+
+    const transactionWithDefaults = {
+      ...transactionData,
+      status: transactionData.status || 'pending',
+      created_at: transactionData.created_at || new Date().toISOString()
+    }
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert([transactionWithDefaults])
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('Supabase error creating transaction:', error)
+      throw error
+    }
+
+    console.log('Transaction created successfully:', data)
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error creating transaction:', error)
+    return { data: null, error }
+  }
+}
+
+export const updateTransaction = async (id: string, updates: Partial<TicketTransferUpdate>) => {
+  try {
+<<<<<<< HEAD
     console.log("Creating transaction with data:", transactionData);
 
     // Insert into Supabase ticket_transfers table with all fields
@@ -267,54 +336,63 @@ export const createTransaction = async (transactionData: any) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
+=======
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+>>>>>>> c3cb5f07e8dcbeec8ead0a9cbc88be0a050b0184
       .select()
       .single();
 
     if (error) {
+<<<<<<< HEAD
       console.error("Supabase error:", error);
+=======
+      console.error("Supabase error in updateTransaction:", error);
+>>>>>>> c3cb5f07e8dcbeec8ead0a9cbc88be0a050b0184
       throw error;
     }
 
     console.log("Transaction created successfully:", data);
     return { data, error: null };
   } catch (error) {
-    console.error("Error creating transaction:", error);
-    return { data: null, error };
-  }
-};
-
-export const updateTransaction = async (id: string, updates: any) => {
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    const transactionIndex = mockTransactions.findIndex((tx) => tx.id === id);
-    if (transactionIndex === -1) {
-      throw new Error("Transaction not found");
-    }
-
-    mockTransactions[transactionIndex] = {
-      ...mockTransactions[transactionIndex],
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    return { data: [mockTransactions[transactionIndex]], error: null };
-  } catch (error) {
     console.error(`Error updating transaction ${id}:`, error);
     return { data: null, error };
   }
 };
 
-// Mock functions for other entities
-export const createDocuSignAgreement = async (agreementData: any) => {
+// DocuSign Agreements API
+export const createDocuSignAgreement = async (agreementData: {
+  transaction_id?: string;
+  envelope_id?: string;
+  status?: string;
+  document_url?: string;
+  seller_status?: string;
+  buyer_status?: string;
+}) => {
   try {
+    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("docusign_agreements")
-      .insert(agreementData)
+      .insert({
+        transaction_id: agreementData.transaction_id || null,
+        envelope_id: agreementData.envelope_id || null,
+        status: agreementData.status || 'sent',
+        document_url: agreementData.document_url || null,
+        seller_status: agreementData.seller_status || 'sent',
+        buyer_status: agreementData.buyer_status || 'sent',
+        created_at: now,
+        updated_at: now,
+      })
       .select()
       .single();
 
     if (error) {
+      console.error("Supabase error in createDocuSignAgreement:", error);
       throw error;
     }
 
@@ -325,20 +403,62 @@ export const createDocuSignAgreement = async (agreementData: any) => {
   }
 };
 
-export const updateDocuSignAgreement = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
-};
-
-export const createEmailNotification = async (emailData: any) => {
+export const updateDocuSignAgreement = async (id: string, updates: {
+  transaction_id?: string;
+  envelope_id?: string;
+  status?: string;
+  document_url?: string;
+  seller_status?: string;
+  buyer_status?: string;
+}) => {
   try {
     const { data, error } = await supabase
-      .from("email_notifications")
-      .insert(emailData)
+      .from("docusign_agreements")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
+      console.error("Supabase error in updateDocuSignAgreement:", error);
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error(`Error updating DocuSign agreement ${id}:`, error);
+    return { data: null, error };
+  }
+};
+
+// Email Notifications API
+export const createEmailNotification = async (emailData: {
+  transaction_id?: string;
+  recipient_id?: string;
+  email_type: string;
+  status?: string;
+  message_id?: string;
+}) => {
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("email_notifications")
+      .insert({
+        transaction_id: emailData.transaction_id || null,
+        recipient_id: emailData.recipient_id || null,
+        email_type: emailData.email_type,
+        status: emailData.status || 'sent',
+        message_id: emailData.message_id || null,
+        created_at: now,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase error in createEmailNotification:", error);
       throw error;
     }
 
@@ -349,30 +469,71 @@ export const createEmailNotification = async (emailData: any) => {
   }
 };
 
-export const updateEmailNotification = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
+export const updateEmailNotification = async (id: string, updates: {
+  transaction_id?: string;
+  recipient_id?: string;
+  email_type?: string;
+  status?: string;
+  message_id?: string;
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from("email_notifications")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase error in updateEmailNotification:", error);
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error(`Error updating email notification ${id}:`, error);
+    return { data: null, error };
+  }
 };
 
-export const createTicketTransfer = async (transferData: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return {
-    data: { id: `transfer-${Date.now()}`, ...transferData },
-    error: null,
-  };
-};
+// Create a new ticket transfer request
+export const createTicketTransfer = async (transferData: {
+  buyer_name: string
+  buyer_email: string
+  seller_name: string
+  seller_email: string
+  event_name: string
+  event_date: string
+  venue: string
+  ticket_details: string
+  price: number
+  payment_method: string
+  status?: string
+}) => {
+  try {
+    console.log('Creating ticket transfer with data:', transferData)
 
-export const updateTicketTransfer = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
-};
+    const transferWithDefaults = {
+      ...transferData,
+      status: transferData.status || 'pending',
+      created_at: new Date().toISOString()
+    }
 
-export const createPaymentRecord = async (paymentData: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id: `payment-${Date.now()}`, ...paymentData }, error: null };
-};
+    const { data, error } = await supabase
+      .from('ticket_transfers')
+      .insert([transferWithDefaults])
+      .select('*')
+      .single()
 
-export const updatePaymentRecord = async (id: string, updates: any) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return { data: { id, ...updates }, error: null };
-};
+    if (error) {
+      console.error('Supabase error creating ticket transfer:', error)
+      throw error
+    }
+
+    console.log('Ticket transfer created successfully:', data)
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error creating ticket transfer:', error)
+    return { data: null, error }
+  }
+}

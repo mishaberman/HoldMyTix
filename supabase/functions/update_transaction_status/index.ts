@@ -1,3 +1,4 @@
+
 // This edge function runs periodically to update transaction statuses
 // It checks for expired transactions and updates their status
 
@@ -26,9 +27,9 @@ Deno.serve(async (req) => {
 
     // Find transactions that have expired
     const { data: expiredTransactions, error: fetchError } = await supabase
-      .from("transactions")
+      .from("ticket_transfers")
       .select("id")
-      .eq("status", "active")
+      .eq("status", "pending")
       .lt("expiration_time", now);
 
     if (fetchError) {
@@ -40,33 +41,38 @@ Deno.serve(async (req) => {
       const expiredIds = expiredTransactions.map((tx) => tx.id);
 
       const { error: updateError } = await supabase
-        .from("transactions")
+        .from("ticket_transfers")
         .update({ status: "cancelled", updated_at: now })
         .in("id", expiredIds);
 
       if (updateError) {
         throw updateError;
       }
+
+      console.log(`Updated ${expiredIds.length} expired transactions to cancelled status`);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: `Updated ${expiredTransactions?.length || 0} expired transactions`,
-        updated: expiredTransactions,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      },
+      }
     );
   } catch (error) {
+    console.error("Error updating transaction statuses:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      },
+        status: 500,
+      }
     );
   }
 });

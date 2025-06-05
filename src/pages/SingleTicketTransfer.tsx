@@ -27,9 +27,9 @@ import { generateTransferAgreement } from "@/lib/docusign";
 import {
   sendSellerInstructions,
   sendBuyerInstructions,
-  sendAdminNotification,
   sendTicketTransferRequest,
-} from "@/lib/email";
+} from "@/lib/email"
+import { createTicketTransfer } from "@/lib/api"
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -244,6 +244,34 @@ const SingleTicketTransfer = () => {
       if (!emailResult.success) {
         console.warn("Failed to send email notification:", emailResult.error);
         // Don't fail the entire process if email fails
+      }
+
+      // Save to database
+      console.log('Form data:', formData)
+
+      const transferResult = await createTicketTransfer({
+        buyer_name: formData.buyerName,
+        buyer_email: formData.buyerEmail,
+        seller_name: formData.sellerName,
+        seller_email: formData.sellerEmail,
+        event_name: formData.eventName,
+        event_date: formData.eventDate,
+        venue: formData.venue,
+        ticket_details: formData.ticketNotes,
+        price: parseFloat(formData.price),
+        payment_method: "Venmo", // TODO: Fix this
+        status: 'pending'
+      })
+
+      if (transferResult.error) {
+        console.error('Failed to save transfer to database:', transferResult.error)
+        // toast({
+        //   title: "Database Error",
+        //   description: "Transfer was initiated but failed to save to database. Please contact support.",
+        //   variant: "destructive",
+        // })
+      } else {
+        console.log('Transfer saved to database:', transferResult.data)
       }
 
       // Show success message and redirect after delay
