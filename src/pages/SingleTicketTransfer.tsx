@@ -210,19 +210,19 @@ const SingleTicketTransfer = () => {
         buyer_status: "sent",
       };
 
-    //  await createDocuSignAgreement(docusignData);
+      //  await createDocuSignAgreement(docusignData);
 
       // Send emails using the mock functions
-      if (isSeller) {
-        // Send instructions to buyer
-       /* const buyerEmailResult = await sendBuyerInstructions(
+      //  if (isSeller) {
+      // Send instructions to buyer
+      /* const buyerEmailResult = await sendBuyerInstructions(
           formData.buyerEmail,
           user?.name || "Seller",
           formData.eventName,
           parseFloat(formData.price),
         );*/
 
-        // Store email notification
+      // Store email notification
       /*  await createEmailNotification({
           transaction_id: transaction.id,
           recipient_id: null,
