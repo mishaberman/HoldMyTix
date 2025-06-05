@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -10,9 +9,403 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-<<<<<<< HEAD
-      [_ in never]: never
-=======
+      docusign_agreements: {
+        Row: {
+          buyer_status: string | null
+          created_at: string | null
+          document_url: string | null
+          envelope_id: string | null
+          id: string
+          seller_status: string | null
+          status: string | null
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_status?: string | null
+          created_at?: string | null
+          document_url?: string | null
+          envelope_id?: string | null
+          id?: string
+          seller_status?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_status?: string | null
+          created_at?: string | null
+          document_url?: string | null
+          envelope_id?: string | null
+          id?: string
+          seller_status?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "docusign_agreements_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_notifications: {
+        Row: {
+          created_at: string | null
+          email_type: string
+          id: string
+          message_id: string | null
+          recipient_id: string | null
+          status: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_type: string
+          id?: string
+          message_id?: string | null
+          recipient_id?: string | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_type?: string
+          id?: string
+          message_id?: string | null
+          recipient_id?: string | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_notifications_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_date: string
+          event_name: string
+          id: string
+          image_url: string | null
+          location: string
+          payment_methods: string[]
+          price: number
+          quantity: number
+          row: string | null
+          seats: string | null
+          section: string | null
+          seller_id: string
+          status: string | null
+          updated_at: string | null
+          venue: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_date: string
+          event_name: string
+          id?: string
+          image_url?: string | null
+          location: string
+          payment_methods: string[]
+          price: number
+          quantity: number
+          row?: string | null
+          seats?: string | null
+          section?: string | null
+          seller_id: string
+          status?: string | null
+          updated_at?: string | null
+          venue: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_name?: string
+          id?: string
+          image_url?: string | null
+          location?: string
+          payment_methods?: string[]
+          price?: number
+          quantity?: number
+          row?: string | null
+          seats?: string | null
+          section?: string | null
+          seller_id?: string
+          status?: string | null
+          updated_at?: string | null
+          venue?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_records: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          payment_date: string | null
+          payment_method: string
+          status: string | null
+          transaction_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_date?: string | null
+          payment_method: string
+          status?: string | null
+          transaction_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_date?: string | null
+          payment_method?: string
+          status?: string | null
+          transaction_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_transfers: {
+        Row: {
+          buyer_email: string | null
+          buyer_id: string | null
+          buyer_name: string | null
+          contract_id: string
+          created_at: string | null
+          event_date: string
+          event_name: string
+          event_time: string | null
+          expiration_time: string | null
+          id: string
+          payment_method: string | null
+          payment_verified: boolean | null
+          price: number
+          seat_details: string | null
+          seller_email: string | null
+          seller_id: string | null
+          seller_name: string | null
+          status: string
+          ticket_notes: string | null
+          ticket_provider: string | null
+          ticket_quantity: number
+          ticket_row: string | null
+          ticket_seat: string | null
+          ticket_section: string | null
+          tickets_verified: boolean | null
+          time_remaining: number | null
+          updated_at: string | null
+          venue: string
+        }
+        Insert: {
+          buyer_email?: string | null
+          buyer_id?: string | null
+          buyer_name?: string | null
+          contract_id: string
+          created_at?: string | null
+          event_date: string
+          event_name: string
+          event_time?: string | null
+          expiration_time?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_verified?: boolean | null
+          price: number
+          seat_details?: string | null
+          seller_email?: string | null
+          seller_id?: string | null
+          seller_name?: string | null
+          status?: string
+          ticket_notes?: string | null
+          ticket_provider?: string | null
+          ticket_quantity?: number
+          ticket_row?: string | null
+          ticket_seat?: string | null
+          ticket_section?: string | null
+          tickets_verified?: boolean | null
+          time_remaining?: number | null
+          updated_at?: string | null
+          venue: string
+        }
+        Update: {
+          buyer_email?: string | null
+          buyer_id?: string | null
+          buyer_name?: string | null
+          contract_id?: string
+          created_at?: string | null
+          event_date?: string
+          event_name?: string
+          event_time?: string | null
+          expiration_time?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_verified?: boolean | null
+          price?: number
+          seat_details?: string | null
+          seller_email?: string | null
+          seller_id?: string | null
+          seller_name?: string | null
+          status?: string
+          ticket_notes?: string | null
+          ticket_provider?: string | null
+          ticket_quantity?: number
+          ticket_row?: string | null
+          ticket_seat?: string | null
+          ticket_section?: string | null
+          tickets_verified?: boolean | null
+          time_remaining?: number | null
+          updated_at?: string | null
+          venue?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_transfers_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_transfers_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          buyer_id: string
+          contract_id: string
+          created_at: string | null
+          event_date: string
+          event_name: string
+          expiration_time: string | null
+          id: string
+          listing_id: string | null
+          payment_method: string
+          payment_verified: boolean | null
+          price: number
+          seat_details: string | null
+          seller_id: string
+          status: string | null
+          ticket_quantity: number
+          tickets_verified: boolean | null
+          time_remaining: number | null
+          updated_at: string | null
+          venue: string
+        }
+        Insert: {
+          buyer_id: string
+          contract_id: string
+          created_at?: string | null
+          event_date: string
+          event_name: string
+          expiration_time?: string | null
+          id?: string
+          listing_id?: string | null
+          payment_method: string
+          payment_verified?: boolean | null
+          price: number
+          seat_details?: string | null
+          seller_id: string
+          status?: string | null
+          ticket_quantity: number
+          tickets_verified?: boolean | null
+          time_remaining?: number | null
+          updated_at?: string | null
+          venue: string
+        }
+        Update: {
+          buyer_id?: string
+          contract_id?: string
+          created_at?: string | null
+          event_date?: string
+          event_name?: string
+          expiration_time?: string | null
+          id?: string
+          listing_id?: string | null
+          payment_method?: string
+          payment_verified?: boolean | null
+          price?: number
+          seat_details?: string | null
+          seller_id?: string
+          status?: string | null
+          ticket_quantity?: number
+          tickets_verified?: boolean | null
+          time_remaining?: number | null
+          updated_at?: string | null
+          venue?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -40,176 +433,20 @@ export type Database = {
         }
         Relationships: []
       }
-      ticket_transfers: {
-        Row: {
-          id: string
-          contract_id: string
-          seller_id: string | null
-          buyer_id: string | null
-          event_name: string
-          event_date: string
-          venue: string
-          seat_details: string | null
-          ticket_quantity: number
-          price: number
-          payment_method: string | null
-          status: string
-          payment_verified: boolean | null
-          tickets_verified: boolean | null
-          time_remaining: number | null
-          expiration_time: string | null
-          ticket_provider: string | null
-          ticket_notes: string | null
-          seller_name: string | null
-          seller_email: string | null
-          buyer_name: string | null
-          buyer_email: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          contract_id: string
-          seller_id?: string | null
-          buyer_id?: string | null
-          event_name: string
-          event_date: string
-          venue: string
-          seat_details?: string | null
-          ticket_quantity?: number
-          price: number
-          payment_method?: string | null
-          status?: string
-          payment_verified?: boolean | null
-          tickets_verified?: boolean | null
-          time_remaining?: number | null
-          expiration_time?: string | null
-          ticket_provider?: string | null
-          ticket_notes?: string | null
-          seller_name?: string | null
-          seller_email?: string | null
-          buyer_name?: string | null
-          buyer_email?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          contract_id?: string
-          seller_id?: string | null
-          buyer_id?: string | null
-          event_name?: string
-          event_date?: string
-          venue?: string
-          seat_details?: string | null
-          ticket_quantity?: number
-          price?: number
-          payment_method?: string | null
-          status?: string
-          payment_verified?: boolean | null
-          tickets_verified?: boolean | null
-          time_remaining?: number | null
-          expiration_time?: string | null
-          ticket_provider?: string | null
-          ticket_notes?: string | null
-          seller_name?: string | null
-          seller_email?: string | null
-          buyer_name?: string | null
-          buyer_email?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      docusign_agreements: {
-        Row: {
-          id: string
-          transaction_id: string | null
-          envelope_id: string | null
-          status: string | null
-          document_url: string | null
-          seller_status: string | null
-          buyer_status: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          transaction_id?: string | null
-          envelope_id?: string | null
-          status?: string | null
-          document_url?: string | null
-          seller_status?: string | null
-          buyer_status?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          transaction_id?: string | null
-          envelope_id?: string | null
-          status?: string | null
-          document_url?: string | null
-          seller_status?: string | null
-          buyer_status?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "docusign_agreements_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "ticket_transfers"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      email_notifications: {
-        Row: {
-          id: string
-          transaction_id: string | null
-          recipient_id: string | null
-          email_type: string
-          status: string | null
-          message_id: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          transaction_id?: string | null
-          recipient_id?: string | null
-          email_type: string
-          status?: string | null
-          message_id?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          transaction_id?: string | null
-          recipient_id?: string | null
-          email_type?: string
-          status?: string | null
-          message_id?: string | null
-          created_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_notifications_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "ticket_transfers"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
->>>>>>> c3cb5f07e8dcbeec8ead0a9cbc88be0a050b0184
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_user_if_not_exists: {
+        Args: {
+          user_id: string
+          user_email: string
+          user_name: string
+          user_avatar: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

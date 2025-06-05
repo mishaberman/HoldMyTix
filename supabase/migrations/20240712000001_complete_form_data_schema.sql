@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 -- Create listings table with all form fields from ListingForm
 CREATE TABLE IF NOT EXISTS public.listings (
-  id TEXT DEFAULT 'listing-' || generate_random_uuid() PRIMARY KEY,
+  id TEXT DEFAULT 'listing-' || EXTRACT(EPOCH FROM NOW())::TEXT || '-' || FLOOR(RANDOM() * 1000000)::TEXT PRIMARY KEY,
   seller_id TEXT REFERENCES public.users(id) NOT NULL,
   event_name TEXT NOT NULL,
   event_date TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
 
 -- Create comprehensive ticket_transfers table with ALL form fields from SingleTicketTransfer
 CREATE TABLE IF NOT EXISTS public.ticket_transfers (
-  id TEXT PRIMARY KEY DEFAULT 'tx-' || generate_random_uuid(),
+  id TEXT PRIMARY KEY DEFAULT 'tx-' || EXTRACT(EPOCH FROM NOW())::TEXT || '-' || FLOOR(RANDOM() * 1000000)::TEXT,
   contract_id TEXT UNIQUE NOT NULL,
   
   -- User references
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.ticket_transfers (
 
 -- Create transactions table for marketplace purchases
 CREATE TABLE IF NOT EXISTS public.transactions (
-  id TEXT DEFAULT 'trans-' || generate_random_uuid() PRIMARY KEY,
+  id TEXT DEFAULT 'trans-' || EXTRACT(EPOCH FROM NOW())::TEXT || '-' || FLOOR(RANDOM() * 1000000)::TEXT PRIMARY KEY,
   contract_id TEXT NOT NULL,
   listing_id TEXT REFERENCES public.listings(id),
   seller_id TEXT REFERENCES public.users(id) NOT NULL,
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 
 -- Create docusign_agreements table
 CREATE TABLE IF NOT EXISTS public.docusign_agreements (
-  id TEXT PRIMARY KEY DEFAULT 'doc-' || generate_random_uuid(),
+  id TEXT PRIMARY KEY DEFAULT 'doc-' || EXTRACT(EPOCH FROM NOW())::TEXT || '-' || FLOOR(RANDOM() * 1000000)::TEXT,
   transaction_id TEXT REFERENCES public.ticket_transfers(id),
   envelope_id TEXT,
   status TEXT DEFAULT 'sent',
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS public.docusign_agreements (
 
 -- Create email_notifications table
 CREATE TABLE IF NOT EXISTS public.email_notifications (
-  id TEXT PRIMARY KEY DEFAULT 'email-' || generate_random_uuid(),
+  id TEXT PRIMARY KEY DEFAULT 'email-' || EXTRACT(EPOCH FROM NOW())::TEXT || '-' || FLOOR(RANDOM() * 1000000)::TEXT,
   transaction_id TEXT REFERENCES public.ticket_transfers(id),
   recipient_id TEXT REFERENCES public.users(id),
   email_type TEXT NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS public.email_notifications (
 
 -- Create payment_records table
 CREATE TABLE IF NOT EXISTS public.payment_records (
-  id TEXT DEFAULT 'payment-' || generate_random_uuid() PRIMARY KEY,
+  id TEXT DEFAULT 'payment-' || EXTRACT(EPOCH FROM NOW())::TEXT || '-' || FLOOR(RANDOM() * 1000000)::TEXT PRIMARY KEY,
   transaction_id TEXT REFERENCES public.transactions(id) NOT NULL,
   payment_method TEXT NOT NULL,
   amount DECIMAL(10, 2) NOT NULL,
