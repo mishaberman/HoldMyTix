@@ -13,6 +13,7 @@ export const sendEmail = async (
   data: EmailData,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   try {
+    return;
     const result = await resend.emails.send({
       from: "info@holdmytix.com",
       to: data.to,
