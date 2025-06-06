@@ -15,14 +15,79 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Clock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
+import { supabase } from "@/lib/supabase";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
   const [activeTab, setActiveTab] = useState("transfers");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminStats, setAdminStats] = useState(null);
+  const [allTransfers, setAllTransfers] = useState([]);
+  const [loadingAdminData, setLoadingAdminData] = useState(false);
 
   const [transfers, setTransfers] = useState([]);
   const [loadingTransfers, setLoadingTransfers] = useState(false);
   const [transferError, setTransferError] = useState(null);
+
+  // Check if user is admin
+  useEffect(() => {
+    if (user?.email === "mishaberman@gmail.com") {
+      setIsAdmin(true);
+      fetchAdminData();
+    }
+  }, [user]);
+
+  const fetchAdminData = async () => {
+    setLoadingAdminData(true);
+    try {
+      // Fetch all transfers for admin view
+      const { data: allTransfersData, error: transfersError } = await supabase
+        .from("ticket_transfers")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (transfersError) throw transfersError;
+      setAllTransfers(allTransfersData || []);
+
+      // Calculate stats
+      const stats = {
+        totalTransfers: allTransfersData?.length || 0,
+        pendingTransfers:
+          allTransfersData?.filter((t) => t.status === "pending").length || 0,
+        completedTransfers:
+          allTransfersData?.filter((t) => t.status === "completed").length || 0,
+        totalRevenue:
+          allTransfersData?.reduce((sum, t) => sum + (t.price || 0), 0) || 0,
+      };
+      setAdminStats(stats);
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+    } finally {
+      setLoadingAdminData(false);
+    }
+  };
+
+  const updateTransferStatus = async (
+    transferId: string,
+    newStatus: string,
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("ticket_transfers")
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", transferId);
+
+      if (error) throw error;
+
+      // Refresh admin data
+      fetchAdminData();
+    } catch (error) {
+      console.error("Error updating transfer status:", error);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && user?.sub) {
@@ -217,9 +282,12 @@ const Dashboard = () => {
           className="w-full"
           onValueChange={setActiveTab}
         >
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+          <TabsList
+            className={`grid w-full ${isAdmin ? "md:w-[600px] grid-cols-3" : "md:w-[400px] grid-cols-2"}`}
+          >
             <TabsTrigger value="transfers">My Transfers</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
+            {isAdmin && <TabsTrigger value="admin">Admin</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="transfers" className="mt-6">
@@ -422,6 +490,164 @@ const Dashboard = () => {
               </div>
             </div>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="admin" className="mt-6">
+              <div className="grid gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Admin Dashboard</CardTitle>
+                    <CardDescription>
+                      Manage all ticket transfers and view site statistics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAdminData ? (
+                      <div className="flex justify-center items-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                        <span className="ml-2">Loading admin data...</span>
+                      </div>
+                    ) : adminStats ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <h3 className="text-lg font-semibold text-blue-800">
+                            Total Transfers
+                          </h3>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {adminStats.totalTransfers}
+                          </p>
+                        </div>
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <h3 className="text-lg font-semibold text-yellow-800">
+                            Pending
+                          </h3>
+                          <p className="text-2xl font-bold text-yellow-600">
+                            {adminStats.pendingTransfers}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <h3 className="text-lg font-semibold text-green-800">
+                            Completed
+                          </h3>
+                          <p className="text-2xl font-bold text-green-600">
+                            {adminStats.completedTransfers}
+                          </p>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <h3 className="text-lg font-semibold text-purple-800">
+                            Total Revenue
+                          </h3>
+                          <p className="text-2xl font-bold text-purple-600">
+                            ${adminStats.totalRevenue.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>All Transfers</CardTitle>
+                    <CardDescription>
+                      Manage and update transfer statuses
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {allTransfers.map((transfer) => (
+                        <div
+                          key={transfer.id}
+                          className="border rounded-lg p-4"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h4 className="font-semibold">
+                                {transfer.event_name}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {transfer.venue} •{" "}
+                                {new Date(
+                                  transfer.event_date,
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {getStatusBadge(transfer.status)}
+                          </div>
+                          <div className="grid md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p>
+                                <strong>Seller:</strong>{" "}
+                                {transfer.seller_name || transfer.seller_email}
+                              </p>
+                              <p>
+                                <strong>Buyer:</strong>{" "}
+                                {transfer.buyer_name || transfer.buyer_email}
+                              </p>
+                            </div>
+                            <div>
+                              <p>
+                                <strong>Price:</strong> $
+                                {transfer.price?.toFixed(2) || "0.00"}
+                              </p>
+                              <p>
+                                <strong>Tickets:</strong>{" "}
+                                {transfer.ticket_quantity || 1}
+                              </p>
+                            </div>
+                            <div>
+                              <p>
+                                <strong>Created:</strong>{" "}
+                                {new Date(
+                                  transfer.created_at,
+                                ).toLocaleDateString()}
+                              </p>
+                              <p>
+                                <strong>Payment Verified:</strong>{" "}
+                                {transfer.payment_verified ? "Yes" : "No"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                updateTransferStatus(transfer.id, "completed")
+                              }
+                              disabled={transfer.status === "completed"}
+                            >
+                              Mark Complete
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                updateTransferStatus(transfer.id, "cancelled")
+                              }
+                              disabled={transfer.status === "cancelled"}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                updateTransferStatus(transfer.id, "pending")
+                              }
+                              disabled={transfer.status === "pending"}
+                            >
+                              Reset to Pending
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </Layout>

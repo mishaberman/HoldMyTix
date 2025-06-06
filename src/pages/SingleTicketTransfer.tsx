@@ -42,31 +42,48 @@ const SingleTicketTransfer = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state with placeholder data for easy testing
-  const [formData, setFormData] = useState({
-    // Event details
-    eventName: "Taylor Swift - The Eras Tour",
-    eventDate: "2024-08-15",
-    eventTime: "19:00",
-    venue: "SoFi Stadium, Los Angeles",
-    ticketCount: "2",
-    ticketSection: "134",
-    ticketRow: "G",
-    ticketSeat: "12-13",
-    ticketProvider: "ticketmaster",
-    ticketNotes: "Mobile transfer available, great view of the stage!",
+  // Form state - load from localStorage if available
+  const [formData, setFormData] = useState(() => {
+    const savedData = localStorage.getItem("ticketTransferForm");
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch (e) {
+        console.error("Error parsing saved form data:", e);
+      }
+    }
 
-    // Price details
-    price: "350",
+    // Default placeholder data for easy testing
+    return {
+      // Event details
+      eventName: "Taylor Swift - The Eras Tour",
+      eventDate: "2024-08-15",
+      eventTime: "19:00",
+      venue: "SoFi Stadium, Los Angeles",
+      ticketCount: "2",
+      ticketSection: "134",
+      ticketRow: "G",
+      ticketSeat: "12-13",
+      ticketProvider: "ticketmaster",
+      ticketNotes: "Mobile transfer available, great view of the stage!",
 
-    // Seller details (when user is buyer)
-    sellerName: "John Doe",
-    sellerEmail: "john.doe@example.com",
+      // Price details
+      price: "350",
 
-    // Buyer details (when user is seller)
-    buyerName: "Jane Smith",
-    buyerEmail: "jane.smith@example.com",
+      // Seller details (when user is buyer)
+      sellerName: "John Doe",
+      sellerEmail: "john.doe@example.com",
+
+      // Buyer details (when user is seller)
+      buyerName: "Jane Smith",
+      buyerEmail: "jane.smith@example.com",
+    };
   });
+
+  // Save form data to localStorage whenever it changes
+  React.useEffect(() => {
+    localStorage.setItem("ticketTransferForm", JSON.stringify(formData));
+  }, [formData]);
 
   const handleChange = (
     e: React.ChangeEvent<

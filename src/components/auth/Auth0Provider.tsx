@@ -70,8 +70,9 @@ export const Auth0Provider = ({ children }: Auth0ProviderProps) => {
       }}
       onRedirectCallback={onRedirectCallback}
       useRefreshTokens={true}
-      cacheLocation="memory"
+      cacheLocation="localstorage"
       skipRedirectCallback={window.location.pathname === "/callback"}
+      sessionCheckExpiryDays={2}
     >
       {children}
     </Auth0ProviderSDK>

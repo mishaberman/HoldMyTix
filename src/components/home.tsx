@@ -144,7 +144,7 @@ const Home = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2"
+                className="gap-2 bg-white hover:bg-gray-50 text-gray-900 border-gray-300"
                 onClick={() => navigate("/marketplace")}
               >
                 Browse Tickets{" "}
@@ -314,7 +314,7 @@ const Home = () => {
             <Button
               size="lg"
               variant="outline"
-              className="bg-transparent border-primary-foreground hover:bg-primary-foreground/10 gap-2"
+              className="bg-white border-white text-primary hover:bg-gray-50 gap-2"
               onClick={() => navigate("/marketplace")}
             >
               Browse Tickets{" "}
@@ -355,7 +355,7 @@ const Home = () => {
                 <li>
                   <Link
                     to="/marketplace"
-                    className="text-muted-foreground hover:text-primary"
+                    className="text-muted-foreground hover:text-primary flex items-center"
                   >
                     Marketplace{" "}
                     <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">

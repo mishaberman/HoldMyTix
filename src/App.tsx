@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useRoutes } from "react-router-dom";
 import { Auth0Provider } from "@/components/auth/Auth0Provider";
 import { Auth0ProviderWrapper } from "@/components/auth/Auth0ProviderWrapper";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -20,7 +20,17 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SingleTicketTransfer = lazy(() => import("./pages/SingleTicketTransfer"));
 const Callback = lazy(() => import("./pages/Callback"));
 
+// Import tempo routes
+let routes: any[] = [];
+try {
+  routes = require("tempo-routes").default || [];
+} catch (e) {
+  // Tempo routes not available
+}
+
 function App() {
+  const tempoRoutes = useRoutes(routes);
+
   return (
     <Auth0Provider>
       <Auth0ProviderWrapper>
@@ -31,6 +41,9 @@ function App() {
             </div>
           }
         >
+          {/* Tempo routes */}
+          {import.meta.env.VITE_TEMPO && tempoRoutes}
+
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/sign-in" element={<SignIn />} />
@@ -61,6 +74,9 @@ function App() {
                 </AuthGuard>
               }
             />
+
+            {/* Add tempo route before catchall */}
+            {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
           </Routes>
 
           {/* Toast notifications */}

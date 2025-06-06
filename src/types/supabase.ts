@@ -318,6 +318,81 @@ export type Database = {
           },
         ]
       }
+      ticketmaster_events: {
+        Row: {
+          accessibility: Json | null
+          age_restrictions: Json | null
+          attractions: Json | null
+          classifications: Json | null
+          created_at: string | null
+          dates: Json | null
+          id: string
+          images: Json | null
+          locale: string | null
+          name: string
+          price_ranges: Json | null
+          products: Json | null
+          promoter: Json | null
+          promoters: Json | null
+          sales: Json | null
+          seat_map: Json | null
+          ticket_limit: Json | null
+          ticketing: Json | null
+          ticketmaster_id: string
+          updated_at: string | null
+          url: string | null
+          venues: Json | null
+        }
+        Insert: {
+          accessibility?: Json | null
+          age_restrictions?: Json | null
+          attractions?: Json | null
+          classifications?: Json | null
+          created_at?: string | null
+          dates?: Json | null
+          id?: string
+          images?: Json | null
+          locale?: string | null
+          name: string
+          price_ranges?: Json | null
+          products?: Json | null
+          promoter?: Json | null
+          promoters?: Json | null
+          sales?: Json | null
+          seat_map?: Json | null
+          ticket_limit?: Json | null
+          ticketing?: Json | null
+          ticketmaster_id: string
+          updated_at?: string | null
+          url?: string | null
+          venues?: Json | null
+        }
+        Update: {
+          accessibility?: Json | null
+          age_restrictions?: Json | null
+          attractions?: Json | null
+          classifications?: Json | null
+          created_at?: string | null
+          dates?: Json | null
+          id?: string
+          images?: Json | null
+          locale?: string | null
+          name?: string
+          price_ranges?: Json | null
+          products?: Json | null
+          promoter?: Json | null
+          promoters?: Json | null
+          sales?: Json | null
+          seat_map?: Json | null
+          ticket_limit?: Json | null
+          ticketing?: Json | null
+          ticketmaster_id?: string
+          updated_at?: string | null
+          url?: string | null
+          venues?: Json | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           buyer_id: string
