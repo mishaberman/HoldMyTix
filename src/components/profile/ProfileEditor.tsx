@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   CardFooter,

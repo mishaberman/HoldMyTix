@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SingleTicketTransfer = lazy(() => import("./pages/SingleTicketTransfer"));
 const Admin = lazy(() => import("./pages/Admin"));
 const TransferDetails = lazy(() => import("./pages/TransferDetails"));
+const Profile = lazy(() => import("./pages/Profile"));
 const Callback = lazy(() => import("./pages/Callback"));
 
 // Import tempo routes
@@ -60,6 +61,14 @@ function App() {
             <Route path="/callback" element={<Callback />} />
 
             {/* Protected routes */}
+            <Route
+              path="/profile"
+              element={
+                <AuthGuard>
+                  <Profile />
+                </AuthGuard>
+              }
+            />
             <Route
               path="/dashboard"
               element={

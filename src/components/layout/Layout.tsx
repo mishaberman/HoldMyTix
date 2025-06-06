@@ -55,7 +55,8 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   Single Transfer
                 </Link>
-                {user?.email === "mishaberman@gmail.com" && (
+                {(user?.email === "mishaberman@gmail.com" ||
+                  user?.email === "austen.dewolf@hover.to") && (
                   <Link
                     to="/admin"
                     className="text-sm font-medium hover:text-primary bg-red-100 text-red-800 px-2 py-1 rounded"

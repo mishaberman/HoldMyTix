@@ -66,17 +66,28 @@ const TransferDetails = () => {
         .eq("transaction_id", transferId)
         .order("created_at", { ascending: false });
 
-      // Combine logs
+      // Combine logs with more detailed information
       const combinedLogs = [
         ...(emailLogs || []).map((log) => ({
           ...log,
           type: "email",
           description: `Email sent: ${log.email_type}`,
+          details: {
+            recipient: log.recipient_id,
+            messageId: log.message_id,
+            emailType: log.email_type,
+          },
         })),
         ...(docusignLogs || []).map((log) => ({
           ...log,
           type: "docusign",
           description: `DocuSign agreement: ${log.status}`,
+          details: {
+            envelopeId: log.envelope_id,
+            documentUrl: log.document_url,
+            sellerStatus: log.seller_status,
+            buyerStatus: log.buyer_status,
+          },
         })),
         {
           id: "created",
@@ -84,7 +95,29 @@ const TransferDetails = () => {
           description: "Transfer created",
           created_at: transferData.created_at,
           status: "completed",
+          details: {
+            contractId: transferData.contract_id,
+            initialStatus: "pending",
+            price: transferData.price,
+            ticketQuantity: transferData.ticket_quantity,
+          },
         },
+        // Add status change logs if admin notes exist
+        ...(transferData.admin_notes
+          ? [
+              {
+                id: "admin_update",
+                type: "admin",
+                description: "Admin update",
+                created_at: transferData.updated_at,
+                status: "completed",
+                details: {
+                  notes: transferData.admin_notes,
+                  currentStatus: transferData.status,
+                },
+              },
+            ]
+          : []),
       ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
       setLogs(combinedLogs);
@@ -158,6 +191,8 @@ const TransferDetails = () => {
         return "📄";
       case "system":
         return "⚙️";
+      case "admin":
+        return "👨‍💼";
       default:
         return "📝";
     }
@@ -408,10 +443,30 @@ const TransferDetails = () => {
                             </Badge>
                           )}
                         </div>
-                        {log.message_id && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Message ID: {log.message_id}
-                          </p>
+                        {log.details && (
+                          <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                            {log.details.messageId && (
+                              <p>Message ID: {log.details.messageId}</p>
+                            )}
+                            {log.details.envelopeId && (
+                              <p>Envelope ID: {log.details.envelopeId}</p>
+                            )}
+                            {log.details.contractId && (
+                              <p>Contract ID: {log.details.contractId}</p>
+                            )}
+                            {log.details.notes && (
+                              <p className="bg-blue-50 p-2 rounded text-blue-800">
+                                <strong>Admin Notes:</strong>{" "}
+                                {log.details.notes}
+                              </p>
+                            )}
+                            {log.details.emailType && (
+                              <p>Email Type: {log.details.emailType}</p>
+                            )}
+                            {log.details.price && (
+                              <p>Amount: ${log.details.price.toFixed(2)}</p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

@@ -212,6 +212,8 @@ export type Database = {
       }
       ticket_transfers: {
         Row: {
+          admin_notes: string | null
+          archived: boolean | null
           buyer_email: string | null
           buyer_id: string | null
           buyer_name: string | null
@@ -242,6 +244,8 @@ export type Database = {
           venue: string
         }
         Insert: {
+          admin_notes?: string | null
+          archived?: boolean | null
           buyer_email?: string | null
           buyer_id?: string | null
           buyer_name?: string | null
@@ -272,6 +276,8 @@ export type Database = {
           venue: string
         }
         Update: {
+          admin_notes?: string | null
+          archived?: boolean | null
           buyer_email?: string | null
           buyer_id?: string | null
           buyer_name?: string | null
