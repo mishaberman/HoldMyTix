@@ -213,14 +213,54 @@ export const getUserTransactions = async (userId: string) => {
 
 export const getTransactionById = async (id: string) => {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // First try to fetch from ticket_transfers table
+    const { data: transfer, error: transferError } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-    const transaction = mockTransactions.find((tx) => tx.id === id);
-    if (!transaction) {
-      throw new Error("Transaction not found");
+    if (transfer && !transferError) {
+      // Transform ticket_transfer data to match expected transaction format
+      const transformedData = {
+        id: transfer.id,
+        contract_id: transfer.contract_id,
+        event_name: transfer.event_name,
+        event_date: transfer.event_date,
+        venue: transfer.venue,
+        seat_details: transfer.seat_details,
+        ticket_quantity: transfer.ticket_quantity,
+        price: transfer.price,
+        payment_method: transfer.payment_method,
+        status: transfer.status,
+        payment_verified: transfer.payment_verified,
+        tickets_verified: transfer.tickets_verified,
+        seller_id: transfer.seller_id,
+        buyer_id: transfer.buyer_id,
+        seller_name: transfer.seller_name,
+        seller_email: transfer.seller_email,
+        buyer_name: transfer.buyer_name,
+        buyer_email: transfer.buyer_email,
+        created_at: transfer.created_at,
+        time_remaining: transfer.time_remaining,
+        expiration_time: transfer.expiration_time,
+      };
+      return { data: transformedData, error: null };
     }
 
-    return { data: transaction, error: null };
+    // If not found in ticket_transfers, try transactions table
+    const { data: transaction, error: transactionError } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (transaction && !transactionError) {
+      return { data: transaction, error: null };
+    }
+
+    // If not found in either table, return error
+    throw new Error("Transaction not found");
   } catch (error) {
     console.error(`Error fetching transaction ${id}:`, error);
     return { data: null, error };
@@ -379,6 +419,43 @@ export const createEmailNotification = async (emailData: any) => {
 export const updateEmailNotification = async (id: string, updates: any) => {
   await new Promise((resolve) => setTimeout(resolve, 300));
   return { data: { id, ...updates }, error: null };
+};
+
+// Admin functions
+export const deleteTransfer = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from("ticket_transfers")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error(`Error deleting transfer ${id}:`, error);
+    return { success: false, error };
+  }
+};
+
+export const getAllTransfers = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error("Error fetching all transfers:", error);
+    return { data: [], error };
+  }
 };
 
 // Create a new ticket transfer request

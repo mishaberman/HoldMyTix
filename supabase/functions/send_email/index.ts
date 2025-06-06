@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-
->>>>>>> b6160227211849675e40008d74c55a364bedde12
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -10,10 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-<<<<<<< HEAD
-=======
 // Email templates
-const generateSellerInstructionsHTML = (buyerName: string, eventName: string) => `
+const generateSellerInstructionsHTML = (
+  buyerName: string,
+  eventName: string,
+) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
       <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
@@ -49,7 +46,11 @@ const generateSellerInstructionsHTML = (buyerName: string, eventName: string) =>
   </div>
 `;
 
-const generateBuyerInstructionsHTML = (sellerName: string, eventName: string, amount: number) => `
+const generateBuyerInstructionsHTML = (
+  sellerName: string,
+  eventName: string,
+  amount: number,
+) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
       <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
@@ -90,7 +91,11 @@ const generateBuyerInstructionsHTML = (sellerName: string, eventName: string, am
   </div>
 `;
 
-const generateAdminNotificationHTML = (eventName: string, sellerEmail: string, buyerEmail: string) => `
+const generateAdminNotificationHTML = (
+  eventName: string,
+  sellerEmail: string,
+  buyerEmail: string,
+) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
       <h1 style="color: #dc2626; margin: 0;">🚨 Admin Alert</h1>
@@ -197,7 +202,6 @@ const generateTicketTransferRequestHTML = (
   </div>
 `;
 
->>>>>>> b6160227211849675e40008d74c55a364bedde12
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -205,27 +209,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-<<<<<<< HEAD
-    const { to, subject, html, from = "info@holdmytix.com" } = await req.json();
-
-    if (!to || !subject || !html) {
-      throw new Error("Missing required fields: to, subject, html");
-    }
-
-    // Get Resend API key from environment
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY environment variable is not set");
-=======
     const { emailType, data } = await req.json();
-    
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY not found in environment variables");
     }
 
     let emailData;
-    
+
     switch (emailType) {
       case "seller_instructions":
         emailData = {
@@ -235,25 +227,33 @@ Deno.serve(async (req) => {
           html: generateSellerInstructionsHTML(data.buyerName, data.eventName),
         };
         break;
-        
+
       case "buyer_instructions":
         emailData = {
           from: "info@holdmytix.com",
           to: data.buyerEmail,
           subject: `HoldMyTix: Payment instructions for ${data.eventName} ticket`,
-          html: generateBuyerInstructionsHTML(data.sellerName, data.eventName, data.amount),
+          html: generateBuyerInstructionsHTML(
+            data.sellerName,
+            data.eventName,
+            data.amount,
+          ),
         };
         break;
-        
+
       case "admin_notification":
         emailData = {
           from: "info@holdmytix.com",
           to: "info@holdmytix.com",
           subject: `🎫 New HoldMyTix Transfer: ${data.eventName}`,
-          html: generateAdminNotificationHTML(data.eventName, data.sellerEmail, data.buyerEmail),
+          html: generateAdminNotificationHTML(
+            data.eventName,
+            data.sellerEmail,
+            data.buyerEmail,
+          ),
         };
         break;
-        
+
       case "ticket_transfer_request":
         emailData = {
           from: "info@holdmytix.com",
@@ -272,37 +272,16 @@ Deno.serve(async (req) => {
           ),
         };
         break;
-        
+
       default:
         throw new Error(`Unknown email type: ${emailType}`);
->>>>>>> b6160227211849675e40008d74c55a364bedde12
     }
 
     // Send email using Resend API
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-<<<<<<< HEAD
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to,
-        subject,
-        html,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`Resend API error: ${response.status} - ${errorData}`);
-    }
-
-    const result = await response.json();
-
-=======
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(emailData),
@@ -314,24 +293,15 @@ Deno.serve(async (req) => {
       throw new Error(result.message || "Failed to send email");
     }
 
->>>>>>> b6160227211849675e40008d74c55a364bedde12
     return new Response(
       JSON.stringify({
         success: true,
         messageId: result.id,
-<<<<<<< HEAD
-        data: result,
-=======
->>>>>>> b6160227211849675e40008d74c55a364bedde12
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-<<<<<<< HEAD
       },
-=======
-      }
->>>>>>> b6160227211849675e40008d74c55a364bedde12
     );
   } catch (error) {
     console.error("Error sending email:", error);
@@ -343,11 +313,7 @@ Deno.serve(async (req) => {
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-<<<<<<< HEAD
       },
-=======
-      }
->>>>>>> b6160227211849675e40008d74c55a364bedde12
     );
   }
 });

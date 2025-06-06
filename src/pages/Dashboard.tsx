@@ -89,6 +89,33 @@ const Dashboard = () => {
     }
   };
 
+  const deleteTransfer = async (transferId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this transfer? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { deleteTransfer } = await import("@/lib/api");
+      const { success, error } = await deleteTransfer(transferId);
+
+      if (error) {
+        throw error;
+      }
+
+      if (success) {
+        // Refresh admin data
+        fetchAdminData();
+      }
+    } catch (error) {
+      console.error("Error deleting transfer:", error);
+      alert("Failed to delete transfer. Please try again.");
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && user?.sub) {
       fetchUserTransactions(user.sub);
@@ -638,6 +665,13 @@ const Dashboard = () => {
                               disabled={transfer.status === "pending"}
                             >
                               Reset to Pending
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteTransfer(transfer.id)}
+                            >
+                              Delete
                             </Button>
                           </div>
                         </div>
