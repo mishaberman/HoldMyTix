@@ -458,6 +458,41 @@ export const getAllTransfers = async () => {
   }
 };
 
+// Search Ticketmaster events
+export const searchTicketmasterEvents = async (query: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticketmaster_events")
+      .select("*")
+      .or(`name.ilike.%${query}%,venues->>name.ilike.%${query}%`)
+      .limit(10);
+
+    if (error) {
+      console.error("Error searching events:", error);
+      return { data: [], error };
+    }
+
+    // Transform the data for easier use
+    const transformedData = (data || []).map((event) => ({
+      id: event.id,
+      name: event.name,
+      venue: event.venues?.[0]?.name || "Unknown Venue",
+      city: event.venues?.[0]?.city?.name || "Unknown City",
+      state: event.venues?.[0]?.state?.stateCode || "",
+      date: event.dates?.start?.localDate || "",
+      time: event.dates?.start?.localTime || "",
+      url: event.url,
+      images: event.images || [],
+      priceRanges: event.price_ranges || [],
+    }));
+
+    return { data: transformedData, error: null };
+  } catch (error) {
+    console.error("Error searching Ticketmaster events:", error);
+    return { data: [], error };
+  }
+};
+
 // Create a new ticket transfer request
 export const createTicketTransfer = async (transferData: {
   buyer_name: string;

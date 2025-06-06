@@ -8,6 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -32,8 +45,15 @@ import {
 } from "@/lib/email";
 import { createTicketTransfer } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle,
+  Search,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 const SingleTicketTransfer = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -42,6 +62,9 @@ const SingleTicketTransfer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [eventSearchOpen, setEventSearchOpen] = useState(false);
+  const [eventSearchResults, setEventSearchResults] = useState([]);
+  const [searchingEvents, setSearchingEvents] = useState(false);
 
   // Form state - load from localStorage if available
   const [formData, setFormData] = useState(() => {
@@ -97,6 +120,42 @@ const SingleTicketTransfer = () => {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const searchEvents = async (query: string) => {
+    if (query.length < 3) {
+      setEventSearchResults([]);
+      return;
+    }
+
+    setSearchingEvents(true);
+    try {
+      const { searchTicketmasterEvents } = await import("@/lib/api");
+      const { data, error } = await searchTicketmasterEvents(query);
+
+      if (error) {
+        console.error("Error searching events:", error);
+        setEventSearchResults([]);
+      } else {
+        setEventSearchResults(data || []);
+      }
+    } catch (error) {
+      console.error("Error searching events:", error);
+      setEventSearchResults([]);
+    } finally {
+      setSearchingEvents(false);
+    }
+  };
+
+  const selectEvent = (event: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      eventName: event.name,
+      venue: `${event.venue}, ${event.city}${event.state ? `, ${event.state}` : ""}`,
+      eventDate: event.date || prev.eventDate,
+      eventTime: event.time || prev.eventTime,
+    }));
+    setEventSearchOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -271,7 +330,7 @@ const SingleTicketTransfer = () => {
         formData.eventName,
         isSeller ? user?.email || "" : formData.sellerEmail,
         isSeller ? formData.buyerEmail : user?.email || "",
-      ); 
+      );
 
       // Send detailed ticket transfer request to info@holdmytix.com
       console.log("About to send ticket transfer request email");
@@ -431,13 +490,72 @@ const SingleTicketTransfer = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="eventName">Event Name *</Label>
+                          <Popover
+                            open={eventSearchOpen}
+                            onOpenChange={setEventSearchOpen}
+                          >
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={eventSearchOpen}
+                                className="w-full justify-between"
+                              >
+                                {formData.eventName || "Search for an event..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                              <Command>
+                                <CommandInput
+                                  placeholder="Search events..."
+                                  onValueChange={searchEvents}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>
+                                    {searchingEvents
+                                      ? "Searching..."
+                                      : "No events found."}
+                                  </CommandEmpty>
+                                  <CommandGroup>
+                                    {eventSearchResults.map((event) => (
+                                      <CommandItem
+                                        key={event.id}
+                                        value={event.name}
+                                        onSelect={() => selectEvent(event)}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            formData.eventName === event.name
+                                              ? "opacity-100"
+                                              : "opacity-0",
+                                          )}
+                                        />
+                                        <div>
+                                          <div className="font-medium">
+                                            {event.name}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground">
+                                            {event.venue}, {event.city}
+                                            {event.date &&
+                                              ` • ${new Date(event.date).toLocaleDateString()}`}
+                                          </div>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                           <Input
                             id="eventName"
                             name="eventName"
                             value={formData.eventName}
                             onChange={handleChange}
-                            placeholder="e.g. Taylor Swift | The Eras Tour"
-                            required
+                            placeholder="Or type event name manually"
+                            className="mt-2"
                           />
                         </div>
 

@@ -7,13 +7,17 @@ interface EmailData {
   body: string;
 }
 
-const callEmailAPI = async (emailType: string, data: any): Promise<{ success: boolean; messageId?: string; error?: string }> => {
+const callEmailAPI = async (
+  emailType: string,
+  data: any,
+): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   try {
+    console.log("Calling email API with:", { emailType, data });
     const response = await fetch(`${SUPABASE_URL}/functions/v1/send_email`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         emailType,
@@ -21,18 +25,22 @@ const callEmailAPI = async (emailType: string, data: any): Promise<{ success: bo
       }),
     });
 
+    console.log("Email API response status:", response.status);
+
     const result = await response.json();
+    console.log("Email API result:", result);
 
     if (!response.ok) {
-      throw new Error(result.error || 'Failed to send email');
+      console.error("Email API error:", result);
+      throw new Error(result.error || "Failed to send email");
     }
 
     return result;
   } catch (error) {
-    console.error('Error calling email API:', error);
+    console.error("Error calling email API:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to send email',
+      error: error instanceof Error ? error.message : "Failed to send email",
     };
   }
 };
@@ -41,8 +49,10 @@ export const sendEmail = async (
   data: EmailData,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   // This function is deprecated in favor of specific email functions
-  console.warn('sendEmail is deprecated. Use specific email functions instead.');
-  return { success: false, error: 'Function deprecated' };
+  console.warn(
+    "sendEmail is deprecated. Use specific email functions instead.",
+  );
+  return { success: false, error: "Function deprecated" };
 };
 
 export const sendSellerInstructions = async (
@@ -50,7 +60,7 @@ export const sendSellerInstructions = async (
   buyerName: string,
   eventName: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
-  return callEmailAPI('seller_instructions', {
+  return callEmailAPI("seller_instructions", {
     sellerEmail,
     buyerName,
     eventName,
@@ -63,7 +73,7 @@ export const sendBuyerInstructions = async (
   eventName: string,
   amount: number,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
-  return callEmailAPI('buyer_instructions', {
+  return callEmailAPI("buyer_instructions", {
     buyerEmail,
     sellerName,
     eventName,
@@ -76,7 +86,7 @@ export const sendAdminNotification = async (
   sellerEmail: string,
   buyerEmail: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
-  return callEmailAPI('admin_notification', {
+  return callEmailAPI("admin_notification", {
     eventName,
     sellerEmail,
     buyerEmail,
@@ -94,7 +104,7 @@ export const sendTicketTransferRequest = async (
   buyerName: string,
   buyerEmail: string,
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
-  return callEmailAPI('ticket_transfer_request', {
+  return callEmailAPI("ticket_transfer_request", {
     eventName,
     eventDate,
     venue,

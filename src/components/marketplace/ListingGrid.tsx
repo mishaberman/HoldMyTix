@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, CreditCardIcon, Loader2 } from "lucide-react";
 import ListingCard from "./ListingCard";
+import { supabase } from "@/lib/supabase";
 
 interface Listing {
   id: string;
@@ -63,10 +64,37 @@ const ListingGrid = ({
     setError(null);
 
     try {
-      // Import the API functions
-      const { getListings } = await import("@/lib/api");
+      // First try to fetch from Ticketmaster events
+      const { data: ticketmasterData, error: ticketmasterError } =
+        await supabase.from("ticketmaster_events").select("*").limit(50);
 
-      // Fetch listings from Supabase
+      if (ticketmasterData && ticketmasterData.length > 0) {
+        // Transform Ticketmaster data to match our component's expected format
+        const formattedListings = ticketmasterData.map((event) => ({
+          id: event.id,
+          eventName: event.name,
+          eventDate: event.dates?.start?.localDate || new Date().toISOString(),
+          venue: event.venues?.[0]?.name || "Unknown Venue",
+          location: `${event.venues?.[0]?.city?.name || "Unknown City"}, ${event.venues?.[0]?.state?.stateCode || "Unknown State"}`,
+          price: event.price_ranges?.[0]?.min || 100, // Default price
+          quantity: 2, // Default quantity
+          section: "",
+          row: "",
+          seats: "",
+          sellerRating: 4.7,
+          paymentMethods: ["Venmo", "PayPal"],
+          verified: true,
+          imageUrl:
+            event.images?.[0]?.url ||
+            "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+        }));
+
+        setListings(formattedListings);
+        return;
+      }
+
+      // Fallback to regular listings if no Ticketmaster data
+      const { getListings } = await import("@/lib/api");
       const { data, error } = await getListings({
         eventType,
         sortBy,
@@ -75,9 +103,7 @@ const ListingGrid = ({
 
       if (error) throw error;
 
-      // If we have data from the API, use it
       if (data && data.length > 0) {
-        // Transform API data to match our component's expected format
         const formattedListings = data.map((listing) => ({
           id: listing.id,
           eventName: listing.event_name,
@@ -89,7 +115,7 @@ const ListingGrid = ({
           section: listing.section || "",
           row: listing.row || "",
           seats: listing.seats || "",
-          sellerRating: 4.7, // Default rating until we implement a rating system
+          sellerRating: 4.7,
           paymentMethods: listing.payment_methods || [],
           verified: listing.verified,
           imageUrl:
@@ -99,13 +125,11 @@ const ListingGrid = ({
 
         setListings(formattedListings);
       } else {
-        // Fallback to mock data if no API data
         setListings(defaultListings);
       }
     } catch (err) {
       console.error("Error fetching events:", err);
       setError("Failed to load events. Please try again later.");
-      // Fallback to mock data on error
       setListings(defaultListings);
     } finally {
       setLoading(false);

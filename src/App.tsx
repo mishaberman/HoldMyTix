@@ -18,6 +18,8 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const About = lazy(() => import("./pages/About"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const SingleTicketTransfer = lazy(() => import("./pages/SingleTicketTransfer"));
+const Admin = lazy(() => import("./pages/Admin"));
+const TransferDetails = lazy(() => import("./pages/TransferDetails"));
 const Callback = lazy(() => import("./pages/Callback"));
 
 // Import tempo routes
@@ -71,6 +73,22 @@ function App() {
               element={
                 <AuthGuard>
                   <SingleTicketTransfer />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AuthGuard>
+                  <Admin />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/transfer/:id"
+              element={
+                <AuthGuard>
+                  <TransferDetails />
                 </AuthGuard>
               }
             />
