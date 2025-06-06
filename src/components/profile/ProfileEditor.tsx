@@ -47,68 +47,88 @@ export const ProfileEditor = () => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Your Profile</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Alert className="mb-6 bg-blue-50 border-blue-200">
-          <AlertDescription className="text-blue-700">
-            Profile information is managed by Auth0. To update your profile
-            details, please visit your Auth0 account settings.
-          </AlertDescription>
-        </Alert>
+    <div className="w-full">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Profile</CardTitle>
+          <CardDescription>
+            Manage your account information and preferences
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert className="mb-6 bg-blue-50 border-blue-200">
+            <AlertDescription className="text-blue-700">
+              Profile information is managed by Auth0. To update your profile
+              details, please visit your Auth0 account settings.
+            </AlertDescription>
+          </Alert>
 
-        <div className="space-y-6">
-          <div className="flex flex-col items-center space-y-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={user.picture} alt={user.name || "User"} />
-              <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
-          </div>
+          <div className="space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={user.picture} alt={user.name || "User"} />
+                <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              value={user.name || ""}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">
-              Name is provided by Auth0
-            </p>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  value={user.name || ""}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Name is provided by Auth0
+                </p>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              value={user.email}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">
-              Email is provided by Auth0
-            </p>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  value={user.email || ""}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email is provided by Auth0
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="userId">User ID</Label>
+              <Input
+                id="userId"
+                value={user.sub || ""}
+                disabled
+                className="bg-muted text-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your unique user identifier
+              </p>
+            </div>
           </div>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button
-          onClick={() => {
-            toast({
-              title: "Profile information",
-              description:
-                "Profile details are managed through your Auth0 account.",
-              duration: 3000,
-            });
-          }}
-          className="w-full"
-        >
-          Manage Account Settings
-        </Button>
-      </CardFooter>
-    </Card>
+        </CardContent>
+        <CardFooter>
+          <Button
+            onClick={() => {
+              toast({
+                title: "Profile information",
+                description:
+                  "Profile details are managed through your Auth0 account.",
+                duration: 3000,
+              });
+            }}
+            className="w-full"
+          >
+            Manage Account Settings
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 };

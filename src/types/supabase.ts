@@ -522,6 +522,10 @@ export type Database = {
         }
         Returns: Json
       }
+      sync_ticketmaster_events: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

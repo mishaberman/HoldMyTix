@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
+  "Access-Control-Max-Age": "86400",
 };
 
 // Email templates
@@ -213,7 +214,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { emailType, data } = await req.json();
+    console.log("Received request method:", req.method);
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+
+    const requestBody = await req.text();
+    console.log("Request body:", requestBody);
+
+    let parsedData;
+    try {
+      parsedData = JSON.parse(requestBody);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      throw new Error("Invalid JSON in request body");
+    }
+
+    const { emailType, data } = parsedData;
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {

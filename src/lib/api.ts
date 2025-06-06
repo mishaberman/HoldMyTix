@@ -213,6 +213,8 @@ export const getUserTransactions = async (userId: string) => {
 
 export const getTransactionById = async (id: string) => {
   try {
+    console.log(`Fetching transaction with ID: ${id}`);
+
     // First try to fetch from ticket_transfers table
     const { data: transfer, error: transferError } = await supabase
       .from("ticket_transfers")
@@ -220,7 +222,26 @@ export const getTransactionById = async (id: string) => {
       .eq("id", id)
       .single();
 
-    if (transfer && !transferError) {
+    if (transferError) {
+      console.error("Error fetching from ticket_transfers:", transferError);
+
+      // If not found in ticket_transfers, try transactions table
+      const { data: transaction, error: transactionError } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (transactionError) {
+        console.error("Error fetching from transactions:", transactionError);
+        throw new Error("Transaction not found in either table");
+      }
+
+      return { data: transaction, error: null };
+    }
+
+    if (transfer) {
+      console.log("Found transfer:", transfer);
       // Transform ticket_transfer data to match expected transaction format
       const transformedData = {
         id: transfer.id,
@@ -233,8 +254,8 @@ export const getTransactionById = async (id: string) => {
         price: transfer.price,
         payment_method: transfer.payment_method,
         status: transfer.status,
-        payment_verified: transfer.payment_verified,
-        tickets_verified: transfer.tickets_verified,
+        payment_verified: transfer.payment_verified || false,
+        tickets_verified: transfer.tickets_verified || false,
         seller_id: transfer.seller_id,
         buyer_id: transfer.buyer_id,
         seller_name: transfer.seller_name,
@@ -242,24 +263,13 @@ export const getTransactionById = async (id: string) => {
         buyer_name: transfer.buyer_name,
         buyer_email: transfer.buyer_email,
         created_at: transfer.created_at,
+        updated_at: transfer.updated_at,
         time_remaining: transfer.time_remaining,
         expiration_time: transfer.expiration_time,
       };
       return { data: transformedData, error: null };
     }
 
-    // If not found in ticket_transfers, try transactions table
-    const { data: transaction, error: transactionError } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (transaction && !transactionError) {
-      return { data: transaction, error: null };
-    }
-
-    // If not found in either table, return error
     throw new Error("Transaction not found");
   } catch (error) {
     console.error(`Error fetching transaction ${id}:`, error);

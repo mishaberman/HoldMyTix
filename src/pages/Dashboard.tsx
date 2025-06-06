@@ -99,17 +99,18 @@ const Dashboard = () => {
     }
 
     try {
-      const { deleteTransfer } = await import("@/lib/api");
-      const { success, error } = await deleteTransfer(transferId);
+      const { error } = await supabase
+        .from("ticket_transfers")
+        .delete()
+        .eq("id", transferId);
 
       if (error) {
         throw error;
       }
 
-      if (success) {
-        // Refresh admin data
-        fetchAdminData();
-      }
+      // Refresh admin data
+      fetchAdminData();
+      alert("Transfer deleted successfully.");
     } catch (error) {
       console.error("Error deleting transfer:", error);
       alert("Failed to delete transfer. Please try again.");
@@ -509,11 +510,7 @@ const Dashboard = () => {
 
               {/* Profile Editor */}
               <div className="mt-6">
-                <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
-                <div className="bg-card rounded-lg shadow">
-                  {/* Import the ProfileEditor component */}
-                  {isAuthenticated && user && <ProfileEditor />}
-                </div>
+                <ProfileEditor />
               </div>
             </div>
           </TabsContent>
