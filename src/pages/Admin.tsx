@@ -202,7 +202,7 @@ const Admin = () => {
     try {
       setLoadingAdminData(true);
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get_ticketmaster_events`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supabase-functions-get_ticketmaster_events`,
         {
           method: "POST",
           headers: {
