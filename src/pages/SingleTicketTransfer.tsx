@@ -28,6 +28,7 @@ import {
   sendSellerInstructions,
   sendBuyerInstructions,
   sendTicketTransferRequest,
+  sendAdminNotification,
 } from "@/lib/email";
 import { createTicketTransfer } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -229,18 +230,18 @@ const SingleTicketTransfer = () => {
 
       //  await createDocuSignAgreement(docusignData);
 
-      // Send emails using the mock functions
-      //  if (isSeller) {
-      // Send instructions to buyer
-      /* const buyerEmailResult = await sendBuyerInstructions(
+      // Send emails using the serverless functions
+      if (isSeller) {
+        // Send instructions to buyer
+        const buyerEmailResult = await sendBuyerInstructions(
           formData.buyerEmail,
           user?.name || "Seller",
           formData.eventName,
           parseFloat(formData.price),
-        );*/
+        );
 
-      // Store email notification
-      /*  await createEmailNotification({
+        // Store email notification
+        await createEmailNotification({
           transaction_id: transaction.id,
           recipient_id: null,
           email_type: "buyer_instructions",
@@ -292,7 +293,6 @@ const SingleTicketTransfer = () => {
         console.warn("Failed to send email notification:", emailResult.error);
         // Don't fail the entire process if email fails
       }
-*/
       // Save to database
       console.log("Form data:", formData);
 
