@@ -64,9 +64,39 @@ const ListingGrid = ({
     setError(null);
 
     try {
-      // Show "Coming Soon" message instead of loading events
-      setListings([]);
-      return;
+      const { getDistinctTicketmasterEvents } = await import("@/lib/api");
+      const { data, error } = await getDistinctTicketmasterEvents();
+
+      if (error) {
+        console.error("Error fetching events:", error);
+        setError("Failed to load events. Please try again later.");
+        setListings([]);
+      } else {
+        // Transform Ticketmaster events to listing format
+        const transformedListings = (data || [])
+          .slice(0, 12)
+          .map((event: any, index: number) => ({
+            id: `tm-${index}`,
+            eventName: event.name,
+            eventDate: event.date
+              ? `${event.date}T20:00:00`
+              : new Date().toISOString(),
+            venue: event.venue || "Unknown Venue",
+            location: `${event.city}${event.state ? `, ${event.state}` : ""}`,
+            price: Math.floor(Math.random() * 300) + 50, // Random price for demo
+            quantity: Math.floor(Math.random() * 4) + 1,
+            section: "TBD",
+            row: "TBD",
+            seats: "TBD",
+            sellerRating: 4.5 + Math.random() * 0.5,
+            paymentMethods: ["Venmo", "PayPal"],
+            verified: true,
+            imageUrl:
+              event.images?.[0]?.url ||
+              "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+          }));
+        setListings(transformedListings);
+      }
     } catch (err) {
       console.error("Error fetching events:", err);
       setError("Failed to load events. Please try again later.");

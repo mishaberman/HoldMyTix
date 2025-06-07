@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,42 +11,50 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Clock, ArrowRight } from "lucide-react";
+import { Clock, ArrowRight, Loader2 } from "lucide-react";
 
 const Marketplace = () => {
-  // Mock data for upcoming events
-  const upcomingEvents = [
-    {
-      id: "ev-1",
-      name: "Taylor Swift | The Eras Tour",
-      date: "2023-08-15",
-      venue: "SoFi Stadium, Los Angeles",
-      imageUrl:
-        "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
-      listingsCount: 24,
-      priceRange: "$250 - $1,200",
-    },
-    {
-      id: "ev-2",
-      name: "Beyoncé | Renaissance World Tour",
-      date: "2023-09-02",
-      venue: "MetLife Stadium, New Jersey",
-      imageUrl:
-        "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
-      listingsCount: 18,
-      priceRange: "$180 - $950",
-    },
-    {
-      id: "ev-3",
-      name: "Bad Bunny | Most Wanted Tour",
-      date: "2023-10-14",
-      venue: "T-Mobile Arena, Las Vegas",
-      imageUrl:
-        "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&q=80",
-      listingsCount: 12,
-      priceRange: "$150 - $800",
-    },
-  ];
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTicketmasterEvents();
+  }, []);
+
+  const fetchTicketmasterEvents = async () => {
+    try {
+      setLoading(true);
+      const { getDistinctTicketmasterEvents } = await import("@/lib/api");
+      const { data, error } = await getDistinctTicketmasterEvents();
+
+      if (error) {
+        console.error("Error fetching events:", error);
+        setError("Failed to load events");
+      } else {
+        // Transform Ticketmaster events for display
+        const transformedEvents = (data || [])
+          .slice(0, 6)
+          .map((event, index) => ({
+            id: `tm-${index}`,
+            name: event.name,
+            date: event.date || new Date().toISOString().split("T")[0],
+            venue: `${event.venue}, ${event.city}${event.state ? `, ${event.state}` : ""}`,
+            imageUrl:
+              event.images?.[0]?.url ||
+              "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
+            listingsCount: Math.floor(Math.random() * 30) + 5,
+            priceRange: `${Math.floor(Math.random() * 200) + 50} - ${Math.floor(Math.random() * 800) + 200}`,
+          }));
+        setUpcomingEvents(transformedEvents);
+      }
+    } catch (err) {
+      console.error("Error fetching Ticketmaster events:", err);
+      setError("Failed to load events");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Layout>
@@ -79,42 +87,56 @@ const Marketplace = () => {
         </div>
 
         <h2 className="text-2xl font-bold mb-4">Preview: Popular Events</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {upcomingEvents.map((event) => (
-            <Card key={event.id} className="overflow-hidden">
-              <div className="h-48 overflow-hidden">
-                <img
-                  src={event.imageUrl}
-                  alt={event.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{event.name}</CardTitle>
-                <CardDescription>
-                  {new Date(event.date).toLocaleDateString()} • {event.venue}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="bg-muted">
-                    {event.listingsCount} listings
-                  </Badge>
-                  <span className="text-sm font-medium">
-                    {event.priceRange}
-                  </span>
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-lg">Loading events...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={fetchTicketmasterEvents} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {upcomingEvents.map((event) => (
+              <Card key={event.id} className="overflow-hidden">
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={event.imageUrl}
+                    alt={event.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full" disabled>
-                  <span className="flex items-center gap-2">
-                    Coming Soon <ArrowRight className="h-4 w-4" />
-                  </span>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{event.name}</CardTitle>
+                  <CardDescription>
+                    {new Date(event.date).toLocaleDateString()} • {event.venue}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <Badge variant="outline" className="bg-muted">
+                      {event.listingsCount} listings
+                    </Badge>
+                    <span className="text-sm font-medium">
+                      {event.priceRange}
+                    </span>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full" disabled>
+                    <span className="flex items-center gap-2">
+                      Coming Soon <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

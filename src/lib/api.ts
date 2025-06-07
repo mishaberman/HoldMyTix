@@ -602,6 +602,17 @@ export const createTicketTransfer = async (transferData: {
     console.log("Creating ticket transfer with data:", transferData);
 
     const now = new Date().toISOString();
+    // Ensure event_date is properly formatted as ISO string
+    let formattedEventDate = transferData.event_date;
+    if (!formattedEventDate.includes("T")) {
+      formattedEventDate = `${formattedEventDate}T00:00:00.000Z`;
+    } else if (
+      !formattedEventDate.endsWith("Z") &&
+      !formattedEventDate.includes("+")
+    ) {
+      formattedEventDate = `${formattedEventDate}.000Z`;
+    }
+
     const transferWithDefaults = {
       contract_id: `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       buyer_name: transferData.buyer_name,
@@ -609,7 +620,7 @@ export const createTicketTransfer = async (transferData: {
       seller_name: transferData.seller_name,
       seller_email: transferData.seller_email,
       event_name: transferData.event_name,
-      event_date: transferData.event_date,
+      event_date: formattedEventDate,
       venue: transferData.venue,
       seat_details: transferData.ticket_details,
       price: transferData.price,

@@ -32,7 +32,12 @@ const Home = () => {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
-            <span className="text-xl font-bold">HoldMyTix</span>
+            <span className="text-xl font-bold flex items-center gap-1">
+              <span className="text-primary">Hold</span>MyTix
+              <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
+                Secure
+              </span>
+            </span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link to="/" className="text-sm font-medium hover:text-primary">
@@ -347,7 +352,12 @@ const Home = () => {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
-                <span className="text-xl font-bold">HoldMyTix</span>
+                <span className="text-xl font-bold flex items-center gap-1">
+                  <span className="text-primary">Hold</span>MyTix
+                  <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
+                    Secure
+                  </span>
+                </span>
               </div>
               <p className="text-muted-foreground mb-4">
                 The secure middleman for peer-to-peer ticket exchanges.
