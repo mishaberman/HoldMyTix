@@ -266,6 +266,14 @@ export const getTransactionById = async (id: string) => {
         updated_at: transfer.updated_at,
         time_remaining: transfer.time_remaining,
         expiration_time: transfer.expiration_time,
+        seller_ticketmaster_email: transfer.seller_ticketmaster_email,
+        buyer_ticketmaster_email: transfer.buyer_ticketmaster_email,
+        payment_method_details: transfer.payment_method_details,
+        payment_received: transfer.payment_received,
+        payment_sent: transfer.payment_sent,
+        ticket_received: transfer.ticket_received,
+        ticket_sent: transfer.ticket_sent,
+        admin_notes: transfer.admin_notes,
       };
       return { data: transformedData, error: null };
     }
