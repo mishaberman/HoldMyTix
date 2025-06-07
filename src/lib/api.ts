@@ -1,5 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { Database } from "@/types/supabase";
+import { zonedTimeToUtc } from "date-fns-tz";
+
+const TIMEZONE = "America/Los_Angeles"; // Change as needed
 
 type TicketTransferInsert =
   Database["public"]["Tables"]["ticket_transfers"]["Insert"];
@@ -601,16 +604,24 @@ export const createTicketTransfer = async (transferData: {
   try {
     console.log("Creating ticket transfer with data:", transferData);
 
-    const now = new Date().toISOString();
-    // Ensure event_date is properly formatted as ISO string
-    let formattedEventDate = transferData.event_date;
-    if (!formattedEventDate.includes("T")) {
-      formattedEventDate = `${formattedEventDate}T00:00:00.000Z`;
-    } else if (
-      !formattedEventDate.endsWith("Z") &&
-      !formattedEventDate.includes("+")
-    ) {
-      formattedEventDate = `${formattedEventDate}.000Z`;
+    let formattedEventDate: string;
+    try {
+      const asDate = new Date(transferData.event_date);
+      if (isNaN(asDate.getTime())) {
+        // If the date is not parsable, try to fix by assuming it's a local date string
+        formattedEventDate = zonedTimeToUtc(
+          transferData.event_date,
+          TIMEZONE,
+        ).toISOString();
+      } else {
+        // If it's already a valid Date, just convert to ISO
+        formattedEventDate = asDate.toISOString();
+      }
+    } catch {
+      formattedEventDate = zonedTimeToUtc(
+        transferData.event_date,
+        TIMEZONE,
+      ).toISOString();
     }
 
     const transferWithDefaults = {
