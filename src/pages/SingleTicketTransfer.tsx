@@ -89,13 +89,15 @@ const SingleTicketTransfer = () => {
 
   // Form state - load from localStorage if available
   const [formData, setFormData] = useState(() => {
-    try {
-      const savedData = localStorage.getItem("ticketTransferForm");
-      if (savedData) {
-        return JSON.parse(savedData);
+    if (typeof window !== "undefined") {
+      try {
+        const savedData = localStorage.getItem("ticketTransferForm");
+        if (savedData) {
+          return JSON.parse(savedData);
+        }
+      } catch (e) {
+        console.error("Error parsing saved form data:", e);
       }
-    } catch (e) {
-      console.error("Error parsing saved form data:", e);
     }
 
     // Default placeholder data for easy testing
@@ -127,10 +129,12 @@ const SingleTicketTransfer = () => {
 
   // Save form data to localStorage whenever it changes
   useEffect(() => {
-    try {
-      localStorage.setItem("ticketTransferForm", JSON.stringify(formData));
-    } catch (e) {
-      console.warn("Could not save form data to localStorage:", e);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ticketTransferForm", JSON.stringify(formData));
+      } catch (e) {
+        console.warn("Could not save form data to localStorage:", e);
+      }
     }
   }, [formData]);
 

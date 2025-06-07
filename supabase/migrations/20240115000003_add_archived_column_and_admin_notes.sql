@@ -16,5 +16,8 @@ ALTER TABLE ticket_transfers ADD COLUMN IF NOT EXISTS ticket_sent BOOLEAN DEFAUL
 -- Add index for archived column for better performance
 CREATE INDEX IF NOT EXISTS idx_ticket_transfers_archived ON ticket_transfers(archived);
 
+-- Archive all existing transfers to start fresh
+UPDATE ticket_transfers SET archived = TRUE WHERE archived = FALSE OR archived IS NULL;
+
 -- Update admin access to include austen.dewolf@hover.to
 -- This will be handled in the application code

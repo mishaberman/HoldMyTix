@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     const { error: deleteError } = await supabase
       .from("ticketmaster_events")
       .delete()
-      .neq("id", "never_match"); // Delete all records
+      .gte("id", 0); // Delete all records
 
     if (deleteError) {
       console.error("Error clearing existing events:", deleteError);

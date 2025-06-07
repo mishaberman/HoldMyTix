@@ -126,40 +126,41 @@ const Home = () => {
               Secure Ticket Exchange Without The Fees
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              HoldMyTix serves as a trusted middleman for peer-to-peer ticket
-              sales, eliminating scams and excessive fees by verifying both
-              ticket transfers and payments before completing transactions.
+              HoldMyTix serves as a trusted middleman for secure one-on-one
+              ticket transfers, eliminating scams by verifying both ticket
+              transfers and payments before completing transactions.
             </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-blue-900 mb-2">
-                🎫 One-Time Ticket Transfer Available Now!
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6 mb-6 shadow-sm">
+              <h3 className="font-bold text-blue-900 mb-3 text-lg">
+                🎫 Secure One-Time Ticket Transfer - Available Now!
               </h3>
-              <p className="text-blue-800 text-sm">
-                Start a secure ticket transfer between you and another person.
-                Perfect for buying or selling tickets safely with our
-                verification process.
+              <p className="text-blue-800 text-sm leading-relaxed">
+                Perfect for safely buying or selling tickets between two people.
+                Our verification process ensures both parties are protected
+                throughout the entire transaction.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
-                className="gap-2 relative"
+                className="gap-2 relative bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={() => navigate("/single-ticket-transfer")}
               >
-                Start Secure Transfer <ArrowRight className="h-4 w-4" />
-                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                  Available Now
+                🎫 Start Secure Transfer <ArrowRight className="h-4 w-4" />
+                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                  Available
                 </span>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 bg-white hover:bg-gray-50 text-gray-900 border-gray-300 relative"
+                className="gap-2 bg-white hover:bg-gray-50 text-gray-600 border-gray-300 relative opacity-75"
                 onClick={() => navigate("/marketplace")}
+                disabled
               >
                 Browse Marketplace <ArrowRight className="h-4 w-4" />
                 <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                  Coming Soon
+                  Soon
                 </span>
               </Button>
             </div>
@@ -315,19 +316,20 @@ const Home = () => {
             <Button
               size="lg"
               variant="secondary"
-              className="gap-2 relative"
+              className="gap-2 relative bg-white text-primary hover:bg-gray-50 border-2 border-white"
               onClick={() => navigate("/single-ticket-transfer")}
             >
-              Start Secure Transfer <ArrowRight className="h-4 w-4" />
-              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+              🎫 Start Secure Transfer <ArrowRight className="h-4 w-4" />
+              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
                 Available
               </span>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="bg-white border-white text-primary hover:bg-gray-50 gap-2 relative"
+              className="bg-white/20 border-white/50 text-white hover:bg-white/30 gap-2 relative opacity-60"
               onClick={() => navigate("/marketplace")}
+              disabled
             >
               Browse Marketplace <ArrowRight className="h-4 w-4" />
               <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">

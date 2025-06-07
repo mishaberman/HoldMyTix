@@ -25,14 +25,17 @@ const Callback = lazy(() => import("./pages/Callback"));
 
 // Import tempo routes
 let routes: any[] = [];
-try {
-  routes = require("tempo-routes").default || [];
-} catch (e) {
-  // Tempo routes not available
+if (typeof window !== "undefined") {
+  try {
+    routes = require("tempo-routes").default || [];
+  } catch (e) {
+    // Tempo routes not available
+    console.warn("Tempo routes not available:", e);
+  }
 }
 
 function App() {
-  const tempoRoutes = useRoutes(routes);
+  const tempoRoutes = routes.length > 0 ? useRoutes(routes) : null;
 
   return (
     <Auth0Provider>

@@ -67,45 +67,10 @@ const ListingGrid = ({
       // Show "Coming Soon" message instead of loading events
       setListings([]);
       return;
-
-      // Fallback to regular listings if no Ticketmaster data
-      const { getListings } = await import("@/lib/api");
-      const { data, error } = await getListings({
-        eventType,
-        sortBy,
-        searchQuery,
-      });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const formattedListings = data.map((listing) => ({
-          id: listing.id,
-          eventName: listing.event_name,
-          eventDate: listing.event_date,
-          venue: listing.venue,
-          location: listing.location,
-          price: listing.price,
-          quantity: listing.quantity,
-          section: listing.section || "",
-          row: listing.row || "",
-          seats: listing.seats || "",
-          sellerRating: 4.7,
-          paymentMethods: listing.payment_methods || [],
-          verified: listing.verified,
-          imageUrl:
-            listing.image_url ||
-            "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
-        }));
-
-        setListings(formattedListings);
-      } else {
-        setListings(defaultListings);
-      }
     } catch (err) {
       console.error("Error fetching events:", err);
       setError("Failed to load events. Please try again later.");
-      setListings(defaultListings);
+      setListings([]);
     } finally {
       setLoading(false);
     }

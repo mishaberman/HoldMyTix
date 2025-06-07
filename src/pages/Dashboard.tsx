@@ -27,11 +27,13 @@ const Dashboard = () => {
 
   // Save active tab to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem("dashboardActiveTab", activeTab);
-    } catch (e) {
-      // Handle localStorage errors gracefully
-      console.warn("Could not save to localStorage:", e);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("dashboardActiveTab", activeTab);
+      } catch (e) {
+        // Handle localStorage errors gracefully
+        console.warn("Could not save to localStorage:", e);
+      }
     }
   }, [activeTab]);
 
