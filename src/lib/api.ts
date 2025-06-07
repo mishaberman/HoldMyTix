@@ -471,35 +471,104 @@ export const getAllTransfers = async () => {
 // Search Ticketmaster events
 export const searchTicketmasterEvents = async (query: string) => {
   try {
-    const { data, error } = await supabase
+    let queryBuilder = supabase
       .from("ticketmaster_events")
       .select("*")
-      .or(`name.ilike.%${query}%,venues->>name.ilike.%${query}%`)
-      .limit(10);
+      .limit(20);
+
+    if (query && query.length >= 2) {
+      queryBuilder = queryBuilder.or(
+        `name.ilike.%${query}%,venues->>name.ilike.%${query}%`,
+      );
+    }
+
+    const { data, error } = await queryBuilder;
 
     if (error) {
       console.error("Error searching events:", error);
       return { data: [], error };
     }
 
-    // Transform the data for easier use
-    const transformedData = (data || []).map((event) => ({
-      id: event.id,
-      name: event.name,
-      venue: event.venues?.[0]?.name || "Unknown Venue",
-      city: event.venues?.[0]?.city?.name || "Unknown City",
-      state: event.venues?.[0]?.state?.stateCode || "",
-      date: event.dates?.start?.localDate || "",
-      time: event.dates?.start?.localTime || "",
-      url: event.url,
-      images: event.images || [],
-      priceRanges: event.price_ranges || [],
-    }));
+    // Get distinct event names to avoid duplicates
+    const uniqueEvents = new Map();
+    (data || []).forEach((event) => {
+      const eventName = event.name;
+      if (!uniqueEvents.has(eventName)) {
+        uniqueEvents.set(eventName, {
+          id: event.id,
+          name: event.name,
+          venue: event.venues?.[0]?.name || "Unknown Venue",
+          city: event.venues?.[0]?.city?.name || "Unknown City",
+          state: event.venues?.[0]?.state?.stateCode || "",
+          date: event.dates?.start?.localDate || "",
+          time: event.dates?.start?.localTime || "",
+          url: event.url,
+          images: event.images || [],
+          priceRanges: event.price_ranges || [],
+        });
+      }
+    });
 
-    return { data: transformedData, error: null };
+    return { data: Array.from(uniqueEvents.values()), error: null };
   } catch (error) {
     console.error("Error searching Ticketmaster events:", error);
     return { data: [], error };
+  }
+};
+
+export const getDistinctTicketmasterEvents = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("ticketmaster_events")
+      .select("name, venues, dates, images, price_ranges, url")
+      .order("name");
+
+    if (error) {
+      console.error("Error fetching distinct events:", error);
+      return { data: [], error };
+    }
+
+    // Get distinct event names
+    const uniqueEvents = new Map();
+    (data || []).forEach((event) => {
+      const eventName = event.name;
+      if (!uniqueEvents.has(eventName)) {
+        uniqueEvents.set(eventName, {
+          name: event.name,
+          venue: event.venues?.[0]?.name || "Unknown Venue",
+          city: event.venues?.[0]?.city?.name || "Unknown City",
+          state: event.venues?.[0]?.state?.stateCode || "",
+          date: event.dates?.start?.localDate || "",
+          time: event.dates?.start?.localTime || "",
+          url: event.url,
+          images: event.images || [],
+          priceRanges: event.price_ranges || [],
+        });
+      }
+    });
+
+    return { data: Array.from(uniqueEvents.values()), error: null };
+  } catch (error) {
+    console.error("Error fetching distinct Ticketmaster events:", error);
+    return { data: [], error };
+  }
+};
+
+export const archiveAllExistingTransfers = async () => {
+  try {
+    const { error } = await supabase
+      .from("ticket_transfers")
+      .update({ archived: true, updated_at: new Date().toISOString() })
+      .eq("archived", false);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error archiving transfers:", error);
+    return { success: false, error };
   }
 };
 

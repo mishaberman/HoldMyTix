@@ -19,7 +19,43 @@ import { supabase } from "@/lib/supabase";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const [activeTab, setActiveTab] = useState("transfers");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("dashboardActiveTab") || "transfers";
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [filteredTransfers, setFilteredTransfers] = useState([]);
+
+  // Save active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem("dashboardActiveTab", activeTab);
+  }, [activeTab]);
+
+  // Filter transfers based on search and status
+  useEffect(() => {
+    let filtered = transfers;
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (transfer) =>
+          transfer.eventName
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          transfer.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          transfer.counterparty
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(
+        (transfer) => transfer.status === statusFilter,
+      );
+    }
+
+    setFilteredTransfers(filtered);
+  }, [transfers, searchQuery, statusFilter]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminStats, setAdminStats] = useState(null);
   const [allTransfers, setAllTransfers] = useState([]);
@@ -319,6 +355,29 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="transfers" className="mt-6">
+            {/* Search and Filter Controls */}
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search transfers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
             <div className="grid gap-6">
               {loadingTransfers ? (
                 <div className="flex justify-center items-center py-12">
@@ -335,8 +394,8 @@ const Dashboard = () => {
                     Try Again
                   </Button>
                 </div>
-              ) : transfers.length > 0 ? (
-                transfers.map((transfer) => (
+              ) : filteredTransfers.length > 0 ? (
+                filteredTransfers.map((transfer) => (
                   <Card key={transfer.id}>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
@@ -454,6 +513,12 @@ const Dashboard = () => {
                     </CardFooter>
                   </Card>
                 ))
+              ) : transfers.length > 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    No transfers match your search criteria.
+                  </p>
+                </div>
               ) : (
                 <Card>
                   <CardHeader>

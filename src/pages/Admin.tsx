@@ -24,9 +24,63 @@ const Admin = () => {
   const [error, setError] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
   const [ticketmasterEvents, setTicketmasterEvents] = useState([]);
-  const [activeView, setActiveView] = useState("transfers");
+  const [activeView, setActiveView] = useState(() => {
+    return localStorage.getItem("adminActiveView") || "transfers";
+  });
   const [editingTransfer, setEditingTransfer] = useState(null);
-  const [editForm, setEditForm] = useState({ status: "", admin_notes: "" });
+  const [editForm, setEditForm] = useState({
+    status: "",
+    admin_notes: "",
+    seller_ticketmaster_email: "",
+    buyer_ticketmaster_email: "",
+    payment_method_details: "",
+    payment_received: false,
+    payment_sent: false,
+    ticket_received: false,
+    ticket_sent: false,
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [filteredTransfers, setFilteredTransfers] = useState([]);
+
+  // Save active view to localStorage
+  useEffect(() => {
+    localStorage.setItem("adminActiveView", activeView);
+  }, [activeView]);
+
+  // Filter transfers based on search and status
+  useEffect(() => {
+    let filtered = allTransfers;
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (transfer) =>
+          transfer.event_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          transfer.seller_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          transfer.buyer_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          transfer.seller_email
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          transfer.buyer_email
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(
+        (transfer) => transfer.status === statusFilter,
+      );
+    }
+
+    setFilteredTransfers(filtered);
+  }, [allTransfers, searchQuery, statusFilter]);
 
   // Check if user is admin
   useEffect(() => {
@@ -195,6 +249,13 @@ const Admin = () => {
     setEditForm({
       status: transfer.status,
       admin_notes: transfer.admin_notes || "",
+      seller_ticketmaster_email: transfer.seller_ticketmaster_email || "",
+      buyer_ticketmaster_email: transfer.buyer_ticketmaster_email || "",
+      payment_method_details: transfer.payment_method_details || "",
+      payment_received: transfer.payment_received || false,
+      payment_sent: transfer.payment_sent || false,
+      ticket_received: transfer.ticket_received || false,
+      ticket_sent: transfer.ticket_sent || false,
     });
   };
 
@@ -202,7 +263,7 @@ const Admin = () => {
     try {
       setLoadingAdminData(true);
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/supabase-functions-get_ticketmaster_events`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get_ticketmaster_events`,
         {
           method: "POST",
           headers: {
@@ -217,6 +278,9 @@ const Admin = () => {
         alert(
           `Successfully synced ${result.totalInserted} events from Ticketmaster!`,
         );
+        if (activeView === "events") {
+          fetchTicketmasterEvents();
+        }
       } else {
         throw new Error(result.error || "Failed to sync events");
       }
@@ -225,6 +289,32 @@ const Admin = () => {
       alert("Failed to sync Ticketmaster events. Please try again.");
     } finally {
       setLoadingAdminData(false);
+    }
+  };
+
+  const archiveAllTransfers = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to archive all existing transfers? This will clear the active transfers list.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { archiveAllExistingTransfers } = await import("@/lib/api");
+      const result = await archiveAllExistingTransfers();
+
+      if (result.success) {
+        alert("All existing transfers have been archived successfully.");
+        fetchAdminData();
+        window.scrollTo(0, 0);
+      } else {
+        throw new Error("Failed to archive transfers");
+      }
+    } catch (error) {
+      console.error("Error archiving transfers:", error);
+      alert("Failed to archive transfers. Please try again.");
     }
   };
 
@@ -316,6 +406,11 @@ const Admin = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
+            {activeView === "transfers" && (
+              <Button onClick={archiveAllTransfers} variant="destructive">
+                Archive All Transfers
+              </Button>
+            )}
             {activeView === "events" && (
               <Button
                 onClick={triggerTicketmasterSync}
@@ -399,7 +494,7 @@ const Admin = () => {
         {activeView === "transfers" && (
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-4">
                 <div>
                   <CardTitle>
                     {showArchived ? "Archived" : "Active"} Transfers
@@ -415,6 +510,29 @@ const Admin = () => {
                   {showArchived ? "Show Active" : "Show Archived"}
                 </Button>
               </div>
+
+              {/* Search and Filter Controls */}
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search transfers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 border rounded-md"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
             </CardHeader>
             <CardContent>
               {loadingAdminData ? (
@@ -424,7 +542,7 @@ const Admin = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {allTransfers.map((transfer) => (
+                  {filteredTransfers.map((transfer) => (
                     <div
                       key={transfer.id}
                       className="border rounded-lg p-4 hover:bg-gray-50"
@@ -475,7 +593,7 @@ const Admin = () => {
                       </div>
                       {editingTransfer === transfer.id ? (
                         <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                               <label className="block text-sm font-medium mb-1">
                                 Status
@@ -497,6 +615,60 @@ const Admin = () => {
                             </div>
                             <div>
                               <label className="block text-sm font-medium mb-1">
+                                Seller Ticketmaster Email
+                              </label>
+                              <input
+                                type="email"
+                                value={editForm.seller_ticketmaster_email}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    seller_ticketmaster_email: e.target.value,
+                                  })
+                                }
+                                className="w-full p-2 border rounded"
+                                placeholder="seller@example.com"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-1">
+                                Buyer Ticketmaster Email
+                              </label>
+                              <input
+                                type="email"
+                                value={editForm.buyer_ticketmaster_email}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    buyer_ticketmaster_email: e.target.value,
+                                  })
+                                }
+                                className="w-full p-2 border rounded"
+                                placeholder="buyer@example.com"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-1">
+                                Payment Method Details
+                              </label>
+                              <input
+                                type="text"
+                                value={editForm.payment_method_details}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    payment_method_details: e.target.value,
+                                  })
+                                }
+                                className="w-full p-2 border rounded"
+                                placeholder="Venmo: @username, Zelle: phone/email"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-1">
                                 Admin Notes
                               </label>
                               <textarea
@@ -513,12 +685,69 @@ const Admin = () => {
                               />
                             </div>
                           </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={editForm.payment_received}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    payment_received: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span className="text-sm">Payment Received</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={editForm.payment_sent}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    payment_sent: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span className="text-sm">Payment Sent</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={editForm.ticket_received}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    ticket_received: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span className="text-sm">Ticket Received</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={editForm.ticket_sent}
+                                onChange={(e) =>
+                                  setEditForm({
+                                    ...editForm,
+                                    ticket_sent: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span className="text-sm">Ticket Sent</span>
+                            </label>
+                          </div>
+
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() =>
-                                updateTransferDetails(transfer.id, editForm)
-                              }
+                              onClick={() => {
+                                updateTransferDetails(transfer.id, editForm);
+                                window.scrollTo(0, 0);
+                              }}
                             >
                               Save Changes
                             </Button>
@@ -527,7 +756,17 @@ const Admin = () => {
                               variant="outline"
                               onClick={() => {
                                 setEditingTransfer(null);
-                                setEditForm({ status: "", admin_notes: "" });
+                                setEditForm({
+                                  status: "",
+                                  admin_notes: "",
+                                  seller_ticketmaster_email: "",
+                                  buyer_ticketmaster_email: "",
+                                  payment_method_details: "",
+                                  payment_received: false,
+                                  payment_sent: false,
+                                  ticket_received: false,
+                                  ticket_sent: false,
+                                });
                               }}
                             >
                               Cancel
@@ -574,6 +813,14 @@ const Admin = () => {
                       )}
                     </div>
                   ))}
+                  {filteredTransfers.length === 0 &&
+                    allTransfers.length > 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          No transfers match your search criteria.
+                        </p>
+                      </div>
+                    )}
                   {allTransfers.length === 0 && (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">

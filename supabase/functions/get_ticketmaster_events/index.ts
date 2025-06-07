@@ -37,26 +37,26 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Calculate date range for next 2 weeks
+    // Calculate date range for next 4 weeks to get more events
     const today = new Date();
-    const twoWeeksFromNow = new Date(
-      today.getTime() + 14 * 24 * 60 * 60 * 1000,
+    const fourWeeksFromNow = new Date(
+      today.getTime() + 28 * 24 * 60 * 60 * 1000,
     );
     const startDateTime = today.toISOString().split("T")[0] + "T00:00:00Z";
     const endDateTime =
-      twoWeeksFromNow.toISOString().split("T")[0] + "T23:59:59Z";
+      fourWeeksFromNow.toISOString().split("T")[0] + "T23:59:59Z";
 
     let page = 0;
     let totalPages = 1;
     let allEvents: any[] = [];
 
-    // Fetch events with pagination, filtered for Seattle and next 2 weeks
-    while (page < totalPages && page < 10) {
-      // Limit to 10 pages for Seattle events
+    // Fetch events with pagination, filtered for Seattle and next 4 weeks
+    while (page < totalPages && page < 15) {
+      // Limit to 15 pages for more events
       const ticketmasterUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${consumerKey}&city=Seattle&stateCode=WA&countryCode=US&startDateTime=${startDateTime}&endDateTime=${endDateTime}&size=200&page=${page}`;
 
       console.log(
-        `Fetching page ${page + 1} from Ticketmaster API for Seattle events`,
+        `Fetching page ${page + 1} from Ticketmaster API for Seattle events (next 4 weeks)`,
       );
 
       const response = await fetch(ticketmasterUrl);
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     console.log(
-      `Fetched ${allEvents.length} Seattle events from Ticketmaster for next 2 weeks`,
+      `Fetched ${allEvents.length} Seattle events from Ticketmaster for next 4 weeks`,
     );
 
     // Clear existing events (only Seattle events from the last sync)
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully fetched and stored ${insertedCount} Seattle events from Ticketmaster (next 2 weeks)`,
+        message: `Successfully fetched and stored ${insertedCount} Seattle events from Ticketmaster (next 4 weeks)`,
         totalFetched: allEvents.length,
         totalInserted: insertedCount,
         dateRange: `${startDateTime} to ${endDateTime}`,

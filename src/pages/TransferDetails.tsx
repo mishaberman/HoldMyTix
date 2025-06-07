@@ -331,25 +331,45 @@ const TransferDetails = () => {
                       <span>{transfer.payment_method}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center">
-                    <span>Payment verified:</span>
-                    <Badge
-                      variant={
-                        transfer.payment_verified ? "default" : "secondary"
-                      }
-                    >
-                      {transfer.payment_verified ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Tickets verified:</span>
-                    <Badge
-                      variant={
-                        transfer.tickets_verified ? "default" : "secondary"
-                      }
-                    >
-                      {transfer.tickets_verified ? "Yes" : "No"}
-                    </Badge>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span>Payment Received:</span>
+                      <Badge
+                        variant={
+                          transfer.payment_received ? "default" : "secondary"
+                        }
+                      >
+                        {transfer.payment_received ? "Yes" : "No"}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Payment Sent:</span>
+                      <Badge
+                        variant={
+                          transfer.payment_sent ? "default" : "secondary"
+                        }
+                      >
+                        {transfer.payment_sent ? "Yes" : "No"}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Ticket Received:</span>
+                      <Badge
+                        variant={
+                          transfer.ticket_received ? "default" : "secondary"
+                        }
+                      >
+                        {transfer.ticket_received ? "Yes" : "No"}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Ticket Sent:</span>
+                      <Badge
+                        variant={transfer.ticket_sent ? "default" : "secondary"}
+                      >
+                        {transfer.ticket_sent ? "Yes" : "No"}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -372,6 +392,12 @@ const TransferDetails = () => {
                   <div>
                     <p className="font-medium">Email:</p>
                     <p>{transfer.seller_email || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Ticketmaster Email:</p>
+                    <p>
+                      {transfer.seller_ticketmaster_email || "Not provided"}
+                    </p>
                   </div>
                   {transfer.seller_id && (
                     <div>
@@ -399,6 +425,14 @@ const TransferDetails = () => {
                   <div>
                     <p className="font-medium">Email:</p>
                     <p>{transfer.buyer_email || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Ticketmaster Email:</p>
+                    <p>{transfer.buyer_ticketmaster_email || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Payment Details:</p>
+                    <p>{transfer.payment_method_details || "Not provided"}</p>
                   </div>
                   {transfer.buyer_id && (
                     <div>

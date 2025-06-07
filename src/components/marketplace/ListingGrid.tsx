@@ -64,26 +64,32 @@ const ListingGrid = ({
     setError(null);
 
     try {
-      // First try to fetch from Ticketmaster events
+      // First try to fetch distinct Ticketmaster events
+      const { getDistinctTicketmasterEvents } = await import("@/lib/api");
       const { data: ticketmasterData, error: ticketmasterError } =
-        await supabase.from("ticketmaster_events").select("*").limit(50);
+        await getDistinctTicketmasterEvents();
 
       if (ticketmasterData && ticketmasterData.length > 0) {
         // Transform Ticketmaster data to match our component's expected format
-        const formattedListings = ticketmasterData.map((event) => ({
-          id: event.id,
+        const formattedListings = ticketmasterData.map((event, index) => ({
+          id: `tm-${index}`,
           eventName: event.name,
-          eventDate: event.dates?.start?.localDate || new Date().toISOString(),
-          venue: event.venues?.[0]?.name || "Unknown Venue",
-          location: `${event.venues?.[0]?.city?.name || "Unknown City"}, ${event.venues?.[0]?.state?.stateCode || "Unknown State"}`,
-          price: event.price_ranges?.[0]?.min || 100, // Default price
-          quantity: 2, // Default quantity
+          eventDate: event.date || new Date().toISOString(),
+          venue: event.venue || "Unknown Venue",
+          location: `${event.city || "Unknown City"}, ${event.state || "Unknown State"}`,
+          price:
+            event.priceRanges?.[0]?.min || Math.floor(Math.random() * 200) + 50, // Random price between 50-250
+          quantity: Math.floor(Math.random() * 4) + 1, // Random quantity 1-4
           section: "",
           row: "",
           seats: "",
-          sellerRating: 4.7,
-          paymentMethods: ["Venmo", "PayPal"],
-          verified: true,
+          sellerRating: 4.5 + Math.random() * 0.5, // Random rating 4.5-5.0
+          paymentMethods: ["Venmo", "PayPal", "Zelle"][
+            Math.floor(Math.random() * 3)
+          ]
+            ? ["Venmo", "PayPal"]
+            : ["Venmo", "Zelle"],
+          verified: Math.random() > 0.2, // 80% verified
           imageUrl:
             event.images?.[0]?.url ||
             "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",

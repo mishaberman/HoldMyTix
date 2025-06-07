@@ -20,7 +20,7 @@ const Layout = ({ children }: LayoutProps) => {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-sm">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
             <Link to="/" className="text-xl font-bold flex items-center gap-1">
               <span className="text-primary">Hold</span>MyTix
               <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
@@ -36,10 +36,7 @@ const Layout = ({ children }: LayoutProps) => {
               to="/marketplace"
               className="text-sm font-medium hover:text-primary"
             >
-              Marketplace{" "}
-              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
-                Coming Soon
-              </span>
+              Marketplace
             </Link>
             {isAuthenticated && (
               <>
@@ -128,7 +125,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Shield className="h-6 w-6 text-primary" />
+                <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
                 <span className="text-xl font-bold flex items-center gap-1">
                   <span className="text-primary">Hold</span>MyTix
                   <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">

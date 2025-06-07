@@ -31,7 +31,7 @@ const Home = () => {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
             <span className="text-xl font-bold">HoldMyTix</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
@@ -42,10 +42,7 @@ const Home = () => {
               to="/marketplace"
               className="text-sm font-medium hover:text-primary"
             >
-              Marketplace{" "}
-              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
-                Coming Soon
-              </span>
+              Marketplace
             </Link>
             <Link
               to="/how-it-works"
@@ -147,11 +144,7 @@ const Home = () => {
                 className="gap-2 bg-white hover:bg-gray-50 text-gray-900 border-gray-300"
                 onClick={() => navigate("/marketplace")}
               >
-                Browse Tickets{" "}
-                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
-                  Coming Soon
-                </span>{" "}
-                <ArrowRight className="h-4 w-4" />
+                Browse Tickets <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -317,11 +310,7 @@ const Home = () => {
               className="bg-white border-white text-primary hover:bg-gray-50 gap-2"
               onClick={() => navigate("/marketplace")}
             >
-              Browse Tickets{" "}
-              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
-                Coming Soon
-              </span>{" "}
-              <ArrowRight className="h-4 w-4" />
+              Browse Tickets <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -333,7 +322,7 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Shield className="h-6 w-6 text-primary" />
+                <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
                 <span className="text-xl font-bold">HoldMyTix</span>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -355,12 +344,9 @@ const Home = () => {
                 <li>
                   <Link
                     to="/marketplace"
-                    className="text-muted-foreground hover:text-primary flex items-center"
+                    className="text-muted-foreground hover:text-primary"
                   >
-                    Marketplace{" "}
-                    <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full ml-1">
-                      Coming Soon
-                    </span>
+                    Marketplace
                   </Link>
                 </li>
                 <li>

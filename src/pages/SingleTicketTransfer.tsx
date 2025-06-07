@@ -65,6 +65,27 @@ const SingleTicketTransfer = () => {
   const [eventSearchOpen, setEventSearchOpen] = useState(false);
   const [eventSearchResults, setEventSearchResults] = useState([]);
   const [searchingEvents, setSearchingEvents] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [initialEvents, setInitialEvents] = useState([]);
+
+  // Load initial events when component mounts
+  useEffect(() => {
+    loadInitialEvents();
+  }, []);
+
+  const loadInitialEvents = async () => {
+    try {
+      const { getDistinctTicketmasterEvents } = await import("@/lib/api");
+      const { data, error } = await getDistinctTicketmasterEvents();
+
+      if (!error && data) {
+        setInitialEvents(data.slice(0, 10)); // Show first 10 events
+        setEventSearchResults(data.slice(0, 10));
+      }
+    } catch (error) {
+      console.error("Error loading initial events:", error);
+    }
+  };
 
   // Form state - load from localStorage if available
   const [formData, setFormData] = useState(() => {
@@ -123,8 +144,8 @@ const SingleTicketTransfer = () => {
   };
 
   const searchEvents = async (query: string) => {
-    if (query.length < 3) {
-      setEventSearchResults([]);
+    if (query.length < 2) {
+      setEventSearchResults(initialEvents);
       return;
     }
 
@@ -135,13 +156,13 @@ const SingleTicketTransfer = () => {
 
       if (error) {
         console.error("Error searching events:", error);
-        setEventSearchResults([]);
+        setEventSearchResults(initialEvents);
       } else {
         setEventSearchResults(data || []);
       }
     } catch (error) {
       console.error("Error searching events:", error);
-      setEventSearchResults([]);
+      setEventSearchResults(initialEvents);
     } finally {
       setSearchingEvents(false);
     }
@@ -385,6 +406,7 @@ const SingleTicketTransfer = () => {
 
       // Show success message and redirect after delay
       setSuccess(true);
+      window.scrollTo(0, 0);
       setTimeout(() => {
         navigate("/dashboard");
       }, 3000);
@@ -490,73 +512,30 @@ const SingleTicketTransfer = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="eventName">Event Name *</Label>
-                          <Popover
-                            open={eventSearchOpen}
-                            onOpenChange={setEventSearchOpen}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={eventSearchOpen}
-                                className="w-full justify-between"
-                              >
-                                {formData.eventName || "Search for an event..."}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-full p-0">
-                              <Command>
-                                <CommandInput
-                                  placeholder="Search events..."
-                                  onValueChange={searchEvents}
-                                />
-                                <CommandList>
-                                  <CommandEmpty>
-                                    {searchingEvents
-                                      ? "Searching..."
-                                      : "No events found."}
-                                  </CommandEmpty>
-                                  <CommandGroup>
-                                    {eventSearchResults.map((event) => (
-                                      <CommandItem
-                                        key={event.id}
-                                        value={event.name}
-                                        onSelect={() => selectEvent(event)}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            formData.eventName === event.name
-                                              ? "opacity-100"
-                                              : "opacity-0",
-                                          )}
-                                        />
-                                        <div>
-                                          <div className="font-medium">
-                                            {event.name}
-                                          </div>
-                                          <div className="text-sm text-muted-foreground">
-                                            {event.venue}, {event.city}
-                                            {event.date &&
-                                              ` • ${new Date(event.date).toLocaleDateString()}`}
-                                          </div>
-                                        </div>
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          <Input
-                            id="eventName"
-                            name="eventName"
-                            value={formData.eventName}
-                            onChange={handleChange}
-                            placeholder="Or type event name manually"
-                            className="mt-2"
-                          />
+                          <div className="space-y-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setShowEventModal(true)}
+                              className="w-full justify-between"
+                            >
+                              {formData.eventName ||
+                                "🎫 Search Ticketmaster Events"}
+                              <Search className="ml-2 h-4 w-4" />
+                            </Button>
+                            <Input
+                              id="eventName"
+                              name="eventName"
+                              value={formData.eventName}
+                              onChange={handleChange}
+                              placeholder="Or type event name manually"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              💡 Click the search button above to find
+                              Ticketmaster events, or type your event name
+                              manually below
+                            </p>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -853,6 +832,70 @@ const SingleTicketTransfer = () => {
           </Card>
         </div>
       </div>
+
+      {/* Event Search Modal */}
+      {showEventModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">
+                  Search Ticketmaster Events
+                </h3>
+                <button
+                  onClick={() => setShowEventModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="Search for events, artists, or venues..."
+                  onChange={(e) => searchEvents(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-96">
+              {searchingEvents ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p>Searching events...</p>
+                </div>
+              ) : eventSearchResults.length > 0 ? (
+                <div className="space-y-2">
+                  {eventSearchResults.map((event, index) => (
+                    <div
+                      key={event.id || index}
+                      onClick={() => {
+                        selectEvent(event);
+                        setShowEventModal(false);
+                      }}
+                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    >
+                      <div className="font-medium">{event.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {event.venue}, {event.city}
+                        {event.date &&
+                          ` • ${new Date(event.date).toLocaleDateString()}`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    No events found. Try a different search term.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

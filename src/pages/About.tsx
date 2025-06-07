@@ -87,29 +87,59 @@ const About = () => {
         </div>
 
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Our Team</h2>
+          <h2 className="text-3xl font-bold mb-4">Meet Our Founder</h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-8">
-            We're a dedicated team of music lovers, sports fans, and tech
-            enthusiasts working to make ticket exchanges safer for everyone.
+            HoldMyTix was founded by Misha Berman, a passionate advocate for
+            secure and fair ticket exchanges.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="text-center">
-                <div className="aspect-square rounded-full overflow-hidden mb-4 mx-auto w-40 h-40">
-                  <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=team${i}`}
-                    alt="Team member"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h3 className="font-bold text-lg">Team Member {i}</h3>
-                <p className="text-muted-foreground">
-                  Co-Founder &{" "}
-                  {i === 1 ? "CEO" : i === 2 ? "CTO" : i === 3 ? "COO" : "CMO"}
-                </p>
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="aspect-square rounded-full overflow-hidden mb-4 mx-auto w-40 h-40">
+                <img
+                  src="https://media.licdn.com/dms/image/v2/C4E03AQHQqVQzjQzQzA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1516240902330?e=1740009600&v=beta&t=8KVQzjQzQzA"
+                  alt="Misha Berman"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://api.dicebear.com/7.x/avataaars/svg?seed=misha";
+                  }}
+                />
               </div>
-            ))}
+              <h3 className="font-bold text-2xl mb-2">Misha Berman</h3>
+              <p className="text-lg text-muted-foreground mb-4">
+                Founder & CEO
+              </p>
+              <a
+                href="https://www.linkedin.com/in/mishaberman"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Connect on LinkedIn
+              </a>
+            </div>
+
+            <div className="bg-background p-6 rounded-lg text-left">
+              <h4 className="font-bold text-lg mb-3">Mission Statement</h4>
+              <p className="text-muted-foreground leading-relaxed">
+                "My mission is to empower people to securely find buyers and
+                sellers on their own and transfer tickets without paying
+                ridiculous fees. After experiencing the frustration and
+                financial burden of excessive fees and scam risks in the
+                secondary ticket market, I founded HoldMyTix to create a
+                platform where fans can connect directly with each other in a
+                safe, secure environment. We believe that ticket exchanges
+                should be about connecting fans with events they love, not about
+                enriching middlemen with outrageous fees."
+              </p>
+              <p className="text-muted-foreground leading-relaxed mt-4">
+                "HoldMyTix serves as a trusted intermediary that verifies
+                transactions without the markup, giving power back to the fans
+                and ensuring that more money goes toward the actual experience
+                rather than unnecessary fees."
+              </p>
+            </div>
           </div>
         </div>
       </div>
