@@ -19,7 +19,7 @@ const callEmailAPI = async (
     }
     
     const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/send_email`,
+      `${SUPABASE_URL}/functions/v1/supabase-functions-send_email`,
       {
         method: "POST",
         headers: {
