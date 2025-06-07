@@ -64,40 +64,9 @@ const ListingGrid = ({
     setError(null);
 
     try {
-      // First try to fetch distinct Ticketmaster events
-      const { getDistinctTicketmasterEvents } = await import("@/lib/api");
-      const { data: ticketmasterData, error: ticketmasterError } =
-        await getDistinctTicketmasterEvents();
-
-      if (ticketmasterData && ticketmasterData.length > 0) {
-        // Transform Ticketmaster data to match our component's expected format
-        const formattedListings = ticketmasterData.map((event, index) => ({
-          id: `tm-${index}`,
-          eventName: event.name,
-          eventDate: event.date || new Date().toISOString(),
-          venue: event.venue || "Unknown Venue",
-          location: `${event.city || "Unknown City"}, ${event.state || "Unknown State"}`,
-          price:
-            event.priceRanges?.[0]?.min || Math.floor(Math.random() * 200) + 50, // Random price between 50-250
-          quantity: Math.floor(Math.random() * 4) + 1, // Random quantity 1-4
-          section: "",
-          row: "",
-          seats: "",
-          sellerRating: 4.5 + Math.random() * 0.5, // Random rating 4.5-5.0
-          paymentMethods: ["Venmo", "PayPal", "Zelle"][
-            Math.floor(Math.random() * 3)
-          ]
-            ? ["Venmo", "PayPal"]
-            : ["Venmo", "Zelle"],
-          verified: Math.random() > 0.2, // 80% verified
-          imageUrl:
-            event.images?.[0]?.url ||
-            "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
-        }));
-
-        setListings(formattedListings);
-        return;
-      }
+      // Show "Coming Soon" message instead of loading events
+      setListings([]);
+      return;
 
       // Fallback to regular listings if no Ticketmaster data
       const { getListings } = await import("@/lib/api");
@@ -282,9 +251,10 @@ const ListingGrid = ({
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-medium">No listings found</h3>
+              <h3 className="text-lg font-medium">Coming Soon</h3>
               <p className="text-muted-foreground mt-2">
-                Try adjusting your search or filters
+                The marketplace will be available soon. For now, use our secure
+                single ticket transfer service.
               </p>
             </div>
           )}

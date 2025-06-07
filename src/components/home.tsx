@@ -130,21 +130,37 @@ const Home = () => {
               sales, eliminating scams and excessive fees by verifying both
               ticket transfers and payments before completing transactions.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-blue-900 mb-2">
+                🎫 One-Time Ticket Transfer Available Now!
+              </h3>
+              <p className="text-blue-800 text-sm">
+                Start a secure ticket transfer between you and another person.
+                Perfect for buying or selling tickets safely with our
+                verification process.
+              </p>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
-                className="gap-2"
-                onClick={() => navigate("/create-listing")}
+                className="gap-2 relative"
+                onClick={() => navigate("/single-ticket-transfer")}
               >
-                Sell Tickets <ArrowRight className="h-4 w-4" />
+                Start Secure Transfer <ArrowRight className="h-4 w-4" />
+                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                  Available Now
+                </span>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 bg-white hover:bg-gray-50 text-gray-900 border-gray-300"
+                className="gap-2 bg-white hover:bg-gray-50 text-gray-900 border-gray-300 relative"
                 onClick={() => navigate("/marketplace")}
               >
-                Browse Tickets <ArrowRight className="h-4 w-4" />
+                Browse Marketplace <ArrowRight className="h-4 w-4" />
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                  Coming Soon
+                </span>
               </Button>
             </div>
           </div>
@@ -299,18 +315,24 @@ const Home = () => {
             <Button
               size="lg"
               variant="secondary"
-              className="gap-2"
-              onClick={() => navigate("/create-listing")}
+              className="gap-2 relative"
+              onClick={() => navigate("/single-ticket-transfer")}
             >
-              Create Listing <ArrowRight className="h-4 w-4" />
+              Start Secure Transfer <ArrowRight className="h-4 w-4" />
+              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                Available
+              </span>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="bg-white border-white text-primary hover:bg-gray-50 gap-2"
+              className="bg-white border-white text-primary hover:bg-gray-50 gap-2 relative"
               onClick={() => navigate("/marketplace")}
             >
-              Browse Tickets <ArrowRight className="h-4 w-4" />
+              Browse Marketplace <ArrowRight className="h-4 w-4" />
+              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                Soon
+              </span>
             </Button>
           </div>
         </div>

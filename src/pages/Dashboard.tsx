@@ -20,16 +20,19 @@ const Dashboard = () => {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem("dashboardActiveTab") || "transfers";
-  });
+  const [activeTab, setActiveTab] = useState("transfers");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [filteredTransfers, setFilteredTransfers] = useState([]);
 
   // Save active tab to localStorage
   useEffect(() => {
-    localStorage.setItem("dashboardActiveTab", activeTab);
+    try {
+      localStorage.setItem("dashboardActiveTab", activeTab);
+    } catch (e) {
+      // Handle localStorage errors gracefully
+      console.warn("Could not save to localStorage:", e);
+    }
   }, [activeTab]);
 
   // Filter transfers based on search and status
