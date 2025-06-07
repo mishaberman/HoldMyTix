@@ -101,7 +101,7 @@ const About = () => {
                   alt="Misha Berman"
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.target.src =
+                    (e.target as HTMLImageElement).src =
                       "https://api.dicebear.com/7.x/avataaars/svg?seed=misha";
                   }}
                 />

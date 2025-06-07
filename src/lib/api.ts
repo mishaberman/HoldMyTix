@@ -1,4 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import { Database } from "@/types/supabase";
+
+type TicketTransferInsert =
+  Database["public"]["Tables"]["ticket_transfers"]["Insert"];
+type TicketTransferUpdate =
+  Database["public"]["Tables"]["ticket_transfers"]["Update"];
 
 // API functions using Supabase for real data persistence
 
@@ -266,14 +272,14 @@ export const getTransactionById = async (id: string) => {
         updated_at: transfer.updated_at,
         time_remaining: transfer.time_remaining,
         expiration_time: transfer.expiration_time,
-        seller_ticketmaster_email: transfer.seller_ticketmaster_email,
-        buyer_ticketmaster_email: transfer.buyer_ticketmaster_email,
-        payment_method_details: transfer.payment_method_details,
-        payment_received: transfer.payment_received,
-        payment_sent: transfer.payment_sent,
-        ticket_received: transfer.ticket_received,
-        ticket_sent: transfer.ticket_sent,
-        admin_notes: transfer.admin_notes,
+        // Note: These fields may not exist in the current schema
+        // seller_ticketmaster_email: transfer.seller_ticketmaster_email,
+        // buyer_ticketmaster_email: transfer.buyer_ticketmaster_email,
+        // payment_method_details: transfer.payment_method_details,
+        // payment_received: transfer.payment_received || false,
+        // payment_sent: transfer.payment_sent || false,
+        // ticket_received: transfer.ticket_received || false,
+        // ticket_sent: transfer.ticket_sent || false,
       };
       return { data: transformedData, error: null };
     }

@@ -118,7 +118,10 @@ const TransferDetails = () => {
               },
             ]
           : []),
-      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      ].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
 
       setLogs(combinedLogs);
     } catch (err) {

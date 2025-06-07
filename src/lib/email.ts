@@ -40,6 +40,68 @@ export const sendEmail = async (emailType: string, data: any) => {
   }
 };
 
+export const sendSellerInstructions = async (
+  sellerEmail: string,
+  buyerName: string,
+  eventName: string,
+) => {
+  return await sendEmail("seller_instructions", {
+    sellerEmail,
+    buyerName,
+    eventName,
+  });
+};
+
+export const sendBuyerInstructions = async (
+  buyerEmail: string,
+  sellerName: string,
+  eventName: string,
+  price: number,
+) => {
+  return await sendEmail("buyer_instructions", {
+    buyerEmail,
+    sellerName,
+    eventName,
+    price,
+  });
+};
+
+export const sendTicketTransferRequest = async (
+  eventName: string,
+  eventDateTime: string,
+  venue: string,
+  ticketDetails: string,
+  totalPrice: number,
+  sellerName: string,
+  sellerEmail: string,
+  buyerName: string,
+  buyerEmail: string,
+) => {
+  return await sendEmail("ticket_transfer_request", {
+    eventName,
+    eventDateTime,
+    venue,
+    ticketDetails,
+    totalPrice,
+    sellerName,
+    sellerEmail,
+    buyerName,
+    buyerEmail,
+  });
+};
+
+export const sendAdminNotification = async (
+  eventName: string,
+  sellerEmail: string,
+  buyerEmail: string,
+) => {
+  return await sendEmail("admin_notification", {
+    eventName,
+    sellerEmail,
+    buyerEmail,
+  });
+};
+
 export const sendTransferRequestEmails = async (transferData: any) => {
   try {
     const baseUrl = window.location.origin;

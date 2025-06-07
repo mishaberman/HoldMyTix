@@ -236,7 +236,17 @@ const Admin = () => {
       if (error) throw error;
 
       setEditingTransfer(null);
-      setEditForm({ status: "", admin_notes: "" });
+      setEditForm({
+        status: "",
+        admin_notes: "",
+        seller_ticketmaster_email: "",
+        buyer_ticketmaster_email: "",
+        payment_method_details: "",
+        payment_received: false,
+        payment_sent: false,
+        ticket_received: false,
+        ticket_sent: false,
+      });
       fetchAdminData();
     } catch (error) {
       console.error("Error updating transfer details:", error);
