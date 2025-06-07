@@ -211,7 +211,11 @@ const SingleTicketTransfer = () => {
         }
         
         // Create date string in ISO format
-        const dateTimeString = `${formData.eventDate}T${formData.eventTime}:00`;
+        // Handle both HH:MM and HH:MM:SS time formats
+        const timeWithSeconds = formData.eventTime.includes(':') && formData.eventTime.split(':').length === 2 
+          ? `${formData.eventTime}:00` 
+          : formData.eventTime;
+        const dateTimeString = `${formData.eventDate}T${timeWithSeconds}`;
         testDate = new Date(dateTimeString);
         
         // Check if the date is valid
