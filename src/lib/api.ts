@@ -245,16 +245,151 @@ export const createEmailNotification = async (emailData: any) => {
   }
 };
 
-// === Export remaining existing functions (e.g., getListings, getTransactionById, etc.) ===
-// Ensure all functions are `export`ed so your pages/components compile without errors.
-export {
-  getListings,
-  getListingById,
-  createListing,
-  updateListing,
-  getUserTransactions,
-  getTransactionById,
-  updateTransaction,
-  deleteTransfer,
-  getAllTransfers,
+// === getUserTransactions function ===
+export const getUserTransactions = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .or(`seller_id.eq.${userId},buyer_id.eq.${userId}`)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error fetching user transactions:", error);
+    return { data: [], error };
+  }
+};
+
+// === Additional missing functions ===
+export const getListings = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error fetching listings:", error);
+    return { data: [], error };
+  }
+};
+
+export const getListingById = async (id: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error fetching listing:", error);
+    return { data: null, error };
+  }
+};
+
+export const createListing = async (listingData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .insert(listingData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error creating listing:", error);
+    return { data: null, error };
+  }
+};
+
+export const updateListing = async (id: string, updates: any) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error updating listing:", error);
+    return { data: null, error };
+  }
+};
+
+export const getTransactionById = async (id: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    return { data: null, error };
+  }
+};
+
+export const updateTransaction = async (id: string, updates: Partial<TicketTransferUpdate>) => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    return { data: null, error };
+  }
+};
+
+export const deleteTransfer = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from("ticket_transfers")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Error deleting transfer:", error);
+    return { success: false, error };
+  }
+};
+
+export const getAllTransfers = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("ticket_transfers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error fetching all transfers:", error);
+    return { data: [], error };
+  }
 };
