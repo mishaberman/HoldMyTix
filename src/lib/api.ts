@@ -200,10 +200,32 @@ export const createTransaction = async (transactionData: any) => {
       if (buyerErr) throw buyerErr;
     }
 
+    // Ensure proper date formatting
+    let formattedEventDate = transactionData.event_date;
+    if (formattedEventDate) {
+      // Parse and reformat the date to ensure valid ISO format
+      const eventDate = new Date(formattedEventDate);
+      if (isNaN(eventDate.getTime())) {
+        throw new Error(`Invalid event date format: ${formattedEventDate}`);
+      }
+      formattedEventDate = eventDate.toISOString();
+    }
+
+    // Format expiration time if provided
+    let formattedExpirationTime = transactionData.expiration_time;
+    if (formattedExpirationTime) {
+      const expirationDate = new Date(formattedExpirationTime);
+      if (!isNaN(expirationDate.getTime())) {
+        formattedExpirationTime = expirationDate.toISOString();
+      }
+    }
+
     const { data, error } = await supabase
       .from("ticket_transfers")
       .insert({
         ...transactionData,
+        event_date: formattedEventDate,
+        expiration_time: formattedExpirationTime,
         created_at: now,
         updated_at: now,
       })

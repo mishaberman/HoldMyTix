@@ -211,7 +211,7 @@ const SingleTicketTransfer = () => {
 
         // Event information
         event_name: formData.eventName,
-        event_date: `${formData.eventDate}T${formData.eventTime}:00Z`,
+        event_date: `${formData.eventDate}T${formData.eventTime}:00.000Z`,
         event_time: formData.eventTime,
         venue: formData.venue,
 
