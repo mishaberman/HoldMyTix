@@ -203,8 +203,22 @@ const SingleTicketTransfer = () => {
       }
 
       // Validate date format
-      const testDate = new Date(`${formData.eventDate}T${formData.eventTime}:00`);
-      if (isNaN(testDate.getTime())) {
+      let testDate;
+      try {
+        // Ensure we have both date and time
+        if (!formData.eventDate || !formData.eventTime) {
+          throw new Error("Event date and time are required");
+        }
+        
+        // Create date string in ISO format
+        const dateTimeString = `${formData.eventDate}T${formData.eventTime}:00`;
+        testDate = new Date(dateTimeString);
+        
+        // Check if the date is valid
+        if (isNaN(testDate.getTime())) {
+          throw new Error("Please enter a valid date and time");
+        }
+      } catch (error) {
         throw new Error("Invalid event date or time format");
       }
 
@@ -230,24 +244,7 @@ const SingleTicketTransfer = () => {
 
         // Event information
         event_name: formData.eventName,
-        event_date: (() => {
-          try {
-            // Create a proper ISO string from date and time
-            const dateTimeString = `${formData.eventDate}T${formData.eventTime}:00`;
-            const date = new Date(dateTimeString);
-            
-            // Check if the date is valid
-            if (isNaN(date.getTime())) {
-              throw new Error(`Invalid date: ${dateTimeString}`);
-            }
-            
-            return date.toISOString();
-          } catch (error) {
-            console.error("Date parsing error:", error);
-            // Fallback to current date if parsing fails
-            return new Date().toISOString();
-          }
-        })(),
+        event_date: testDate.toISOString(),
         event_time: formData.eventTime,
         venue: formData.venue,
 
