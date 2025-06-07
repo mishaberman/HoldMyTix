@@ -491,9 +491,7 @@ export const searchTicketmasterEvents = async (query: string) => {
       .limit(20);
 
     if (query && query.length >= 2) {
-      queryBuilder = queryBuilder.or(
-        `name.ilike.%${query}%,venues->>name.ilike.%${query}%`,
-      );
+      queryBuilder = queryBuilder.ilike("name", `%${query}%`);
     }
 
     const { data, error } = await queryBuilder;
@@ -514,8 +512,8 @@ export const searchTicketmasterEvents = async (query: string) => {
           venue: event.venues?.[0]?.name || "Unknown Venue",
           city: event.venues?.[0]?.city?.name || "Unknown City",
           state: event.venues?.[0]?.state?.stateCode || "",
-          date: event.dates?.start?.localDate || "",
-          time: event.dates?.start?.localTime || "",
+          date: (event.dates as any)?.start?.localDate || "",
+          time: (event.dates as any)?.start?.localTime || "",
           url: event.url,
           images: event.images || [],
           priceRanges: event.price_ranges || [],
@@ -552,8 +550,8 @@ export const getDistinctTicketmasterEvents = async () => {
           venue: event.venues?.[0]?.name || "Unknown Venue",
           city: event.venues?.[0]?.city?.name || "Unknown City",
           state: event.venues?.[0]?.state?.stateCode || "",
-          date: event.dates?.start?.localDate || "",
-          time: event.dates?.start?.localTime || "",
+          date: (event.dates as any)?.start?.localDate || "",
+          time: (event.dates as any)?.start?.localTime || "",
           url: event.url,
           images: event.images || [],
           priceRanges: event.price_ranges || [],
