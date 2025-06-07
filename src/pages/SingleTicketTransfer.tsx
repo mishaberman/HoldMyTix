@@ -211,7 +211,7 @@ const SingleTicketTransfer = () => {
 
         // Event information
         event_name: formData.eventName,
-        event_date: `${formData.eventDate}T${formData.eventTime}:00.000Z`,
+        event_date: `${formData.eventDate}T${formData.eventTime}:00Z`,
         event_time: formData.eventTime,
         venue: formData.venue,
 
@@ -249,29 +249,20 @@ const SingleTicketTransfer = () => {
       // Ensure current user exists in users table first
       if (user?.sub) {
         console.log("Ensuring user exists in database:", user.sub);
-        const { data: existingUser, error: userCheckError } = await supabase
+        const { error: upsertUserError } = await supabase
           .from("users")
-          .select("id")
-          .eq("id", user.sub)
-          .single();
+          .upsert({
+            id: user.sub,
+            email: user.email || "unknown@example.com",
+            full_name: user.name || "Unknown User",
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'id'
+          });
 
-        if (userCheckError && userCheckError.code === "PGRST116") {
-          // User doesn't exist, create them
-          console.log("Creating current user in database:", user.sub);
-          const { error: createUserError } = await supabase
-            .from("users")
-            .insert({
-              id: user.sub,
-              email: user.email || "unknown@example.com",
-              full_name: user.name || "Unknown User",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
-
-          if (createUserError) {
-            console.error("Error creating current user:", createUserError);
-            throw new Error("Failed to create user record");
-          }
+        if (upsertUserError) {
+          console.error("Error upserting current user:", upsertUserError);
+          throw new Error("Failed to create/update user record");
         }
       }
 

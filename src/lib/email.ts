@@ -13,8 +13,13 @@ const callEmailAPI = async (
 ): Promise<{ success: boolean; messageId?: string; error?: string }> => {
   try {
     console.log("Calling email API with:", { emailType, data });
+    
+    if (!SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      throw new Error("Missing Supabase configuration for email API");
+    }
+    
     const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/supabase-functions-send_email`,
+      `${SUPABASE_URL}/functions/v1/send_email`,
       {
         method: "POST",
         headers: {

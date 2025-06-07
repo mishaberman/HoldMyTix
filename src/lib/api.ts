@@ -117,10 +117,16 @@ export const createTicketTransfer = async (transferData: {
 }) => {
   try {
     console.log("Creating ticket transfer with data:", transferData);
+    
+    // Validate required fields
+    if (!transferData.event_name || !transferData.buyer_email || !transferData.seller_email) {
+      throw new Error("Missing required fields: event_name, buyer_email, or seller_email");
+    }
+    
     // Ensure proper ISO format
     const asDate = new Date(transferData.event_date);
     if (isNaN(asDate.getTime())) {
-      throw new Error("Invalid event_date format");
+      throw new Error(`Invalid event_date format: ${transferData.event_date}`);
     }
     const formattedEventDate = asDate.toISOString();
 
@@ -165,35 +171,33 @@ export const createTransaction = async (transactionData: any) => {
     console.log("Creating transaction:", transactionData);
     const now = new Date().toISOString();
 
-    // Ensure seller exists
+    // Ensure seller exists - use upsert to handle existing users
     if (transactionData.seller_id) {
       const { error: userErr } = await supabase
         .from("users")
-        .insert({
+        .upsert({
           id: transactionData.seller_id,
           email: transactionData.seller_email || "unknown@example.com",
           full_name: transactionData.seller_name || "Unknown User",
-          created_at: now,
           updated_at: now,
-        })
-        .select()
-        .single();
-      if (userErr && userErr.code !== "PGRST116") throw userErr;
+        }, {
+          onConflict: 'id'
+        });
+      if (userErr) throw userErr;
     }
 
     if (transactionData.buyer_id) {
       const { error: buyerErr } = await supabase
         .from("users")
-        .insert({
+        .upsert({
           id: transactionData.buyer_id,
           email: transactionData.buyer_email || "unknown@example.com",
           full_name: transactionData.buyer_name || "Unknown User",
-          created_at: now,
           updated_at: now,
-        })
-        .select()
-        .single();
-      if (buyerErr && buyerErr.code !== "PGRST116") throw buyerErr;
+        }, {
+          onConflict: 'id'
+        });
+      if (buyerErr) throw buyerErr;
     }
 
     const { data, error } = await supabase
