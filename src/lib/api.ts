@@ -203,12 +203,31 @@ export const createTransaction = async (transactionData: any) => {
     // Ensure proper date formatting
     let formattedEventDate = transactionData.event_date;
     if (formattedEventDate) {
+      // Fix malformed date strings with double seconds
+      formattedEventDate = formattedEventDate.replace(/T(\d{2}:\d{2}:\d{2}):\d{2}\./, 'T$1.');
+      
       // Parse and reformat the date to ensure valid ISO format
       const eventDate = new Date(formattedEventDate);
       if (isNaN(eventDate.getTime())) {
-        throw new Error(`Invalid event date format: ${formattedEventDate}`);
+        // Try to construct a proper ISO string from date and time components
+        if (formattedEventDate.includes('T') && formattedEventDate.includes('Z')) {
+          // Extract date and time parts and reconstruct
+          const [datePart, timePart] = formattedEventDate.split('T');
+          const timeWithoutZ = timePart.replace('Z', '').replace(/:\d{2}\.\d{3}$/, '');
+          const reconstructed = `${datePart}T${timeWithoutZ}:00.000Z`;
+          const reconstructedDate = new Date(reconstructed);
+          
+          if (!isNaN(reconstructedDate.getTime())) {
+            formattedEventDate = reconstructedDate.toISOString();
+          } else {
+            throw new Error(`Invalid event date format: ${transactionData.event_date}`);
+          }
+        } else {
+          throw new Error(`Invalid event date format: ${transactionData.event_date}`);
+        }
+      } else {
+        formattedEventDate = eventDate.toISOString();
       }
-      formattedEventDate = eventDate.toISOString();
     }
 
     // Format expiration time if provided
