@@ -22,6 +22,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 const TransferDetails = lazy(() => import("./pages/TransferDetails"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Callback = lazy(() => import("./pages/Callback"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
 
 // Import tempo routes
 let routes: any[] = [];
@@ -61,6 +62,7 @@ function App() {
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<ContactUs />} />
             <Route path="/callback" element={<Callback />} />
 
             {/* Protected routes */}

@@ -204,6 +204,64 @@ const generateSellerConfirmationHTML = (
   </div>
 `;
 
+const generateContactUsHTML = (
+  name: string,
+  email: string,
+  phone: string,
+  subject: string,
+  message: string,
+) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
+      <p style="color: #6b7280; margin: 5px 0 0 0;">New Contact Form Submission</p>
+    </div>
+    
+    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <h2 style="color: #1f2937; margin-top: 0;">Contact Details</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #374151; font-weight: 500; width: 30%;">Name:</td>
+          <td style="padding: 8px 0; color: #1f2937;"><strong>${name}</strong></td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Email:</td>
+          <td style="padding: 8px 0; color: #1f2937;">${email}</td>
+        </tr>
+        ${
+          phone
+            ? `<tr>
+          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Phone:</td>
+          <td style="padding: 8px 0; color: #1f2937;">${phone}</td>
+        </tr>`
+            : ""
+        }
+        <tr>
+          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Subject:</td>
+          <td style="padding: 8px 0; color: #1f2937;"><strong>${subject}</strong></td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Time:</td>
+          <td style="padding: 8px 0; color: #1f2937;">${new Date().toLocaleString()}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <h3 style="color: #1e40af; margin-top: 0;">💬 Message</h3>
+      <p style="color: #1e40af; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+    </div>
+    
+    <div style="background: #fffbeb; border: 1px solid #fed7aa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+      <p style="color: #92400e; margin: 0; font-weight: 500;">📧 Reply to: ${email}</p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+      <p style="color: #6b7280; font-size: 14px;">HoldMyTix Contact System</p>
+    </div>
+  </div>
+`;
+
 const generateTicketTransferRequestHTML = (
   eventName: string,
   eventDate: string,
@@ -383,6 +441,21 @@ Deno.serve(async (req) => {
             data.sellerEmail,
             data.buyerName,
             data.buyerEmail,
+          ),
+        };
+        break;
+
+      case "contact_us":
+        emailData = {
+          from: "info@holdmytix.com",
+          to: "info@holdmytix.com",
+          subject: `📧 Contact Form: ${data.subject}`,
+          html: generateContactUsHTML(
+            data.name,
+            data.email,
+            data.phone,
+            data.subject,
+            data.message,
           ),
         };
         break;

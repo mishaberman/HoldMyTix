@@ -10,5 +10,62 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script src="https://api.tempolabs.ai/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js"></script>
+
+    <!-- Facebook Pixel Code -->
+    <script>
+      !(function (f, b, e, v, n, t, s) {
+        if (f.fbq) return;
+        n = f.fbq = function () {
+          n.callMethod
+            ? n.callMethod.apply(n, arguments)
+            : n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = !0;
+        n.version = "2.0";
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = !0;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+      })(
+        window,
+        document,
+        "script",
+        "https://connect.facebook.net/en_US/fbevents.js",
+      );
+
+      // Initialize Facebook Pixel
+      if (typeof fbq !== "undefined") {
+        fbq("init", "1442987863380686"); // Replace with actual pixel ID
+        fbq("track", "PageView");
+      }
+
+      // Fallback for blocked pixels - collect fbclid
+      window.fbPixelFallback = function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fbclid = urlParams.get("fbclid");
+        if (fbclid && !document.cookie.includes("_fbc=")) {
+          document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; path=/; max-age=7776000`; // 90 days
+        }
+      };
+
+      // Check if pixel loaded, if not use fallback
+      setTimeout(function () {
+        if (typeof fbq === "undefined" || !window.fbq.loaded) {
+          window.fbPixelFallback();
+        }
+      }, 3000);
+    </script>
+    <noscript
+      ><img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=1442987863380686&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Facebook Pixel Code -->
   </body>
 </html>
