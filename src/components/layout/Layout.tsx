@@ -37,276 +37,251 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Navigation Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 shadow-sm">
-        <div className="container">
-          <div className="flex h-16 items-center justify-between">
-            {/* Mobile Menu - Always first on left */}
-            <div className="flex items-center gap-3">
-              <div className="lg:hidden">
-                <Sheet
-                  open={isMobileMenuOpen}
-                  onOpenChange={setIsMobileMenuOpen}
-                >
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                      <Menu className="h-5 w-5" />
-                      <span className="sr-only">Toggle menu</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                    <div className="flex flex-col gap-6 mt-6">
-                      <div className="flex items-center gap-2 pb-4 border-b">
-                        <img
-                          src="/logo.svg"
-                          alt="HoldMyTix"
-                          className="h-8 w-8"
-                        />
-                        <span className="text-xl font-bold flex items-center gap-1">
-                          <span className="text-primary">Hold</span>MyTix
-                          <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
-                            Secure
-                          </span>
-                        </span>
-                      </div>
-
-                      <nav className="flex flex-col gap-4">
-                        <Link
-                          to="/"
-                          className="text-lg font-medium hover:text-primary py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          Home
-                        </Link>
-                        <Link
-                          to="/marketplace"
-                          className="text-lg font-medium hover:text-primary py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          Marketplace
-                        </Link>
-                        {isAuthenticated && (
-                          <>
-                            <Link
-                              to="/dashboard"
-                              className="text-lg font-medium hover:text-primary py-2"
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              Dashboard
-                            </Link>
-                            <Link
-                              to="/single-ticket-transfer"
-                              className="text-lg font-medium hover:text-primary py-2"
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              Single Transfer
-                            </Link>
-                            {(user?.email === "mishaberman@gmail.com" ||
-                              user?.email === "austen.dewolf@hover.to") && (
-                              <Link
-                                to="/admin"
-                                className="text-lg font-medium hover:text-primary bg-red-100 text-red-800 px-3 py-2 rounded"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                              >
-                                Admin
-                              </Link>
-                            )}
-                          </>
-                        )}
-                        <Link
-                          to="/how-it-works"
-                          className="text-lg font-medium hover:text-primary py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          How It Works
-                        </Link>
-                        <Link
-                          to="/faq"
-                          className="text-lg font-medium hover:text-primary py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          FAQ
-                        </Link>
-                        <Link
-                          to="/about"
-                          className="text-lg font-medium hover:text-primary py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          About Us
-                        </Link>
-                        <Link
-                          to="/contact"
-                          className="text-lg font-medium hover:text-primary py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          Contact
-                        </Link>
-                      </nav>
-
-                      <div className="pt-4 border-t">
-                        {isLoading ? (
-                          <div className="h-9 w-full bg-muted animate-pulse rounded-md"></div>
-                        ) : isAuthenticated ? (
-                          <div className="flex flex-col gap-3">
-                            <div className="bg-secondary text-primary px-3 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                              Secure Session
-                            </div>
-                            <UserProfile />
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-3">
-                            <div className="bg-secondary/50 text-muted-foreground px-3 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-muted-foreground"></span>
-                              Not Verified
-                            </div>
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => {
-                                setIsMobileMenuOpen(false);
-                                navigate("/sign-in", {
-                                  state: { returnTo: location.pathname },
-                                });
-                              }}
-                            >
-                              Sign In
-                            </Button>
-                            <Button
-                              className="w-full"
-                              onClick={() => {
-                                setIsMobileMenuOpen(false);
-                                navigate("/sign-up");
-                              }}
-                            >
-                              Get Started
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-
-              {/* Logo - Always visible */}
-              <div className="flex items-center gap-2">
-                <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
+            <Link to="/" className="text-xl font-bold flex items-center gap-1">
+              <span className="text-primary">Hold</span>MyTix
+              <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
+                Secure
+              </span>
+            </Link>
+          </div>
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            <Link to="/" className="text-sm font-medium hover:text-primary">
+              Home
+            </Link>
+            <Link
+              to="/marketplace"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Marketplace
+            </Link>
+            {isAuthenticated && (
+              <>
                 <Link
-                  to="/"
-                  className="text-xl font-bold flex items-center gap-1"
+                  to="/dashboard"
+                  className="text-sm font-medium hover:text-primary"
                 >
-                  <span className="text-primary">Hold</span>MyTix
-                  <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
-                    Secure
-                  </span>
+                  Dashboard
                 </Link>
-              </div>
-            </div>
+                <Link
+                  to="/single-ticket-transfer"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Single Transfer
+                </Link>
+                {(user?.email === "mishaberman@gmail.com" ||
+                  user?.email === "austen.dewolf@hover.to") && (
+                  <Link
+                    to="/admin"
+                    className="text-sm font-medium hover:text-primary bg-red-100 text-red-800 px-2 py-1 rounded"
+                  >
+                    Admin
+                  </Link>
+                )}
+              </>
+            )}
+            <Link
+              to="/how-it-works"
+              className="text-sm font-medium hover:text-primary"
+            >
+              How It Works
+            </Link>
+            <Link to="/faq" className="text-sm font-medium hover:text-primary">
+              FAQ
+            </Link>
+            <Link
+              to="/about"
+              className="text-sm font-medium hover:text-primary"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Contact
+            </Link>
+          </nav>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-6">
-              <Link
-                to="/"
-                className="text-sm font-medium hover:text-primary whitespace-nowrap"
-              >
-                Home
-              </Link>
-              <Link
-                to="/marketplace"
-                className="text-sm font-medium hover:text-primary whitespace-nowrap"
-              >
-                Marketplace
-              </Link>
-              {isAuthenticated && (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="text-sm font-medium hover:text-primary whitespace-nowrap"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/single-ticket-transfer"
-                    className="text-sm font-medium hover:text-primary whitespace-nowrap"
-                  >
-                    Single Transfer
-                  </Link>
-                  {(user?.email === "mishaberman@gmail.com" ||
-                    user?.email === "austen.dewolf@hover.to") && (
+          {/* Mobile Menu */}
+          <div className="lg:hidden">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <div className="flex flex-col gap-6 mt-6">
+                  <div className="flex items-center gap-2 pb-4 border-b">
+                    <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8" />
+                    <span className="text-xl font-bold flex items-center gap-1">
+                      <span className="text-primary">Hold</span>MyTix
+                      <span className="bg-secondary text-xs px-2 py-0.5 rounded-full text-primary font-medium">
+                        Secure
+                      </span>
+                    </span>
+                  </div>
+
+                  <nav className="flex flex-col gap-4">
                     <Link
-                      to="/admin"
-                      className="text-sm font-medium hover:text-primary bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
+                      to="/"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      Admin
+                      Home
                     </Link>
-                  )}
-                </>
-              )}
-              <Link
-                to="/how-it-works"
-                className="text-sm font-medium hover:text-primary whitespace-nowrap"
-              >
-                How It Works
-              </Link>
-              <Link
-                to="/faq"
-                className="text-sm font-medium hover:text-primary whitespace-nowrap"
-              >
-                FAQ
-              </Link>
-              <Link
-                to="/about"
-                className="text-sm font-medium hover:text-primary whitespace-nowrap"
-              >
-                About Us
-              </Link>
-              <Link
-                to="/contact"
-                className="text-sm font-medium hover:text-primary whitespace-nowrap"
-              >
-                Contact
-              </Link>
-            </nav>
+                    <Link
+                      to="/marketplace"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Marketplace
+                    </Link>
+                    {isAuthenticated && (
+                      <>
+                        <Link
+                          to="/dashboard"
+                          className="text-lg font-medium hover:text-primary py-2"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/single-ticket-transfer"
+                          className="text-lg font-medium hover:text-primary py-2"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Single Transfer
+                        </Link>
+                        {(user?.email === "mishaberman@gmail.com" ||
+                          user?.email === "austen.dewolf@hover.to") && (
+                          <Link
+                            to="/admin"
+                            className="text-lg font-medium hover:text-primary bg-red-100 text-red-800 px-3 py-2 rounded"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            Admin
+                          </Link>
+                        )}
+                      </>
+                    )}
+                    <Link
+                      to="/how-it-works"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      How It Works
+                    </Link>
+                    <Link
+                      to="/faq"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      FAQ
+                    </Link>
+                    <Link
+                      to="/about"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      About Us
+                    </Link>
+                    <Link
+                      to="/contact"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Contact
+                    </Link>
+                  </nav>
 
-            {/* Auth Section */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              {isLoading ? (
-                <div className="h-9 w-20 bg-muted animate-pulse rounded-md"></div>
-              ) : isAuthenticated ? (
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="hidden sm:flex bg-secondary text-primary px-3 py-1 rounded-full text-xs font-medium items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                    Secure Session
+                  <div className="pt-4 border-t">
+                    {isLoading ? (
+                      <div className="h-9 w-full bg-muted animate-pulse rounded-md"></div>
+                    ) : isAuthenticated ? (
+                      <div className="flex flex-col gap-3">
+                        <div className="bg-secondary text-primary px-3 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                          Secure Session
+                        </div>
+                        <UserProfile />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <div className="bg-secondary/50 text-muted-foreground px-3 py-2 rounded-full text-sm font-medium flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-muted-foreground"></span>
+                          Not Verified
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            navigate("/sign-in", {
+                              state: { returnTo: location.pathname },
+                            });
+                          }}
+                        >
+                          Sign In
+                        </Button>
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            navigate("/sign-up");
+                          }}
+                        >
+                          Get Started
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <UserProfile />
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="hidden sm:flex bg-secondary/50 text-muted-foreground px-3 py-1 rounded-full text-xs font-medium items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground"></span>
-                    Not Verified
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs px-2 sm:px-4"
-                    onClick={() =>
-                      navigate("/sign-in", {
-                        state: { returnTo: location.pathname },
-                      })
-                    }
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="text-xs px-2 sm:px-4"
-                    onClick={() => navigate("/sign-up")}
-                  >
-                    Get Started
-                  </Button>
+              </SheetContent>
+            </Sheet>
+          </div>
+          <div className="flex items-center gap-4">
+            {isLoading ? (
+              <div className="h-9 w-20 bg-muted animate-pulse rounded-md"></div>
+            ) : isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <div className="bg-secondary text-primary px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                  Secure Session
                 </div>
-              )}
-            </div>
+                <UserProfile />
+              </div>
+            ) : (
+              <>
+                <div className="hidden sm:block bg-secondary/50 text-muted-foreground px-3 py-1 rounded-full text-xs font-medium mr-2 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground"></span>
+                  Not Verified
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    navigate("/sign-in", {
+                      state: { returnTo: location.pathname },
+                    })
+                  }
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate("/sign-up")}
+                  className="hidden sm:block"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

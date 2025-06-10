@@ -209,7 +209,7 @@ const SingleTicketTransfer = () => {
         if (!formData.eventDate || !formData.eventTime) {
           throw new Error("Event date and time are required");
         }
-        
+
         // Create date string in ISO format
         // Handle both HH:MM and HH:MM:SS time formats
         const timeWithSeconds = formData.eventTime.includes(':') && formData.eventTime.split(':').length === 2 
@@ -217,7 +217,7 @@ const SingleTicketTransfer = () => {
           : formData.eventTime;
         const dateTimeString = `${formData.eventDate}T${timeWithSeconds}`;
         testDate = new Date(dateTimeString);
-        
+
         // Check if the date is valid
         if (isNaN(testDate.getTime())) {
           throw new Error("Please enter a valid date and time");
@@ -910,13 +910,13 @@ const SingleTicketTransfer = () => {
                         selectEvent(event);
                         setShowEventModal(false);
                       }}
-                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-l-4 border-l-transparent hover:border-l-primary"
                     >
-                      <div className="font-medium">{event.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {event.venue}, {event.city}
+                      <div className="font-medium text-lg dark:text-white">{event.name}</div>
+                      <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
+                        📍 {event.venue}, {event.city}
                         {event.date &&
-                          ` • ${new Date(event.date).toLocaleDateString()}`}
+                          ` • 📅 ${new Date(event.date).toLocaleDateString()}`}
                       </div>
                     </div>
                   ))}
