@@ -18,17 +18,20 @@ const callEmailAPI = async (
       throw new Error("Missing Supabase configuration for email API");
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/send_email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/supabase-functions-send_email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          emailType,
+          data,
+        }),
       },
-      body: JSON.stringify({
-        emailType,
-        data,
-      }),
-    });
+    );
 
     console.log("Email API response status:", response.status);
 
