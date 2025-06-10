@@ -62,6 +62,7 @@ const SingleTicketTransfer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
   const [eventSearchOpen, setEventSearchOpen] = useState(false);
   const [eventSearchResults, setEventSearchResults] = useState([]);
   const [searchingEvents, setSearchingEvents] = useState(false);
@@ -191,6 +192,7 @@ const SingleTicketTransfer = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    setDateError(null);
 
     try {
       // Validate required fields
@@ -202,33 +204,47 @@ const SingleTicketTransfer = () => {
         throw new Error("Please fill in all required ticket and price details");
       }
 
-      // Validate date format
+      // Validate date format and check if it's in the future
       let testDate;
       try {
         // Ensure we have both date and time
         if (!formData.eventDate || !formData.eventTime) {
+          setDateError("Event date and time are required");
           throw new Error("Event date and time are required");
         }
 
         // Create date string in ISO format
         // Handle both HH:MM and HH:MM:SS time formats
-        const timeWithSeconds = formData.eventTime.includes(':') && formData.eventTime.split(':').length === 2 
-          ? `${formData.eventTime}:00` 
-          : formData.eventTime;
+        const timeWithSeconds =
+          formData.eventTime.includes(":") &&
+          formData.eventTime.split(":").length === 2
+            ? `${formData.eventTime}:00`
+            : formData.eventTime;
         const dateTimeString = `${formData.eventDate}T${timeWithSeconds}`;
         testDate = new Date(dateTimeString);
 
         // Check if the date is valid
         if (isNaN(testDate.getTime())) {
+          setDateError("Please enter a valid date and time");
           throw new Error("Please enter a valid date and time");
         }
-      } catch (error) {
-        throw new Error("Invalid event date or time format");
-      }
 
-      // Check if event date is in the future
-      if (testDate < new Date()) {
-        throw new Error("Event date must be in the future");
+        // Check if event date is in the future (with some buffer for timezone differences)
+        const now = new Date();
+        const bufferTime = 30 * 60 * 1000; // 30 minutes buffer
+        if (testDate.getTime() <= now.getTime() - bufferTime) {
+          setDateError(
+            "Event date must be in the future. Please select a future date and time.",
+          );
+          throw new Error(
+            "Event date must be in the future. Please select a future date and time.",
+          );
+        }
+      } catch (error) {
+        if (!dateError) {
+          setDateError("Invalid event date or time format");
+        }
+        throw error;
       }
       // Determine if user is seller or buyer based on active tab
       const isSeller = activeTab === "seller";
@@ -286,16 +302,17 @@ const SingleTicketTransfer = () => {
       // Ensure current user exists in users table first
       if (user?.sub) {
         console.log("Ensuring user exists in database:", user.sub);
-        const { error: upsertUserError } = await supabase
-          .from("users")
-          .upsert({
+        const { error: upsertUserError } = await supabase.from("users").upsert(
+          {
             id: user.sub,
             email: user.email || "unknown@example.com",
             full_name: user.name || "Unknown User",
             updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'id'
-          });
+          },
+          {
+            onConflict: "id",
+          },
+        );
 
         if (upsertUserError) {
           console.error("Error upserting current user:", upsertUserError);
@@ -448,7 +465,13 @@ const SingleTicketTransfer = () => {
       }, 3000);
     } catch (err) {
       console.error("Error creating ticket transfer:", err);
-      setError("Failed to create ticket transfer. Please try again.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Failed to create ticket transfer. Please try again.");
+      }
+      // Scroll to top to show error
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);
     }
@@ -503,13 +526,17 @@ const SingleTicketTransfer = () => {
 
   return (
     <Layout>
-      <div className="container py-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Initiate Ticket Transfer</h1>
-          <p className="text-muted-foreground mb-6">
-            Securely transfer tickets between buyers and sellers with HoldMyTix
-            as your trusted middleman.
-          </p>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center sm:text-left mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
+              Initiate Ticket Transfer
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+              Securely transfer tickets between buyers and sellers with
+              HoldMyTix as your trusted middleman.
+            </p>
+          </div>
 
           {error && (
             <Alert className="mb-6 bg-red-50 border-red-200">
@@ -517,6 +544,18 @@ const SingleTicketTransfer = () => {
               <AlertTitle className="text-red-800">Error</AlertTitle>
               <AlertDescription className="text-red-700">
                 {error}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {dateError && (
+            <Alert className="mb-6 bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-800">
+                Date Validation Error
+              </AlertTitle>
+              <AlertDescription className="text-red-700">
+                {dateError}
               </AlertDescription>
             </Alert>
           )}
@@ -541,7 +580,7 @@ const SingleTicketTransfer = () => {
                 </TabsList>
 
                 <form onSubmit={handleSubmit}>
-                  <div className="space-y-6">
+                  <div className="space-y-6 sm:space-y-8">
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium">Event Information</h3>
 
@@ -553,11 +592,13 @@ const SingleTicketTransfer = () => {
                               type="button"
                               variant="outline"
                               onClick={() => setShowEventModal(true)}
-                              className="w-full justify-between"
+                              className="w-full justify-between text-left overflow-hidden"
                             >
-                              {formData.eventName ||
-                                "🎫 Search Ticketmaster Events"}
-                              <Search className="ml-2 h-4 w-4" />
+                              <span className="truncate">
+                                {formData.eventName ||
+                                  "🎫 Search Ticketmaster Events"}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 flex-shrink-0" />
                             </Button>
                             <Input
                               id="eventName"
@@ -565,6 +606,7 @@ const SingleTicketTransfer = () => {
                               value={formData.eventName}
                               onChange={handleChange}
                               placeholder="Or type event name manually"
+                              className="w-full"
                             />
                             <p className="text-xs text-muted-foreground">
                               💡 Click the search button above to find
@@ -587,28 +629,59 @@ const SingleTicketTransfer = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="eventDate">Event Date *</Label>
+                          <Label
+                            htmlFor="eventDate"
+                            className={dateError ? "text-red-600" : ""}
+                          >
+                            Event Date *
+                          </Label>
                           <Input
                             id="eventDate"
                             name="eventDate"
                             value={formData.eventDate}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              handleChange(e);
+                              if (dateError) setDateError(null);
+                            }}
                             type="date"
                             required
+                            className={
+                              dateError
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                : ""
+                            }
                           />
+                          {dateError && (
+                            <p className="text-xs text-red-600 mt-1">
+                              {dateError}
+                            </p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="eventTime">Event Time *</Label>
+                          <Label
+                            htmlFor="eventTime"
+                            className={dateError ? "text-red-600" : ""}
+                          >
+                            Event Time *
+                          </Label>
                           <Input
                             id="eventTime"
                             name="eventTime"
                             value={formData.eventTime}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              handleChange(e);
+                              if (dateError) setDateError(null);
+                            }}
                             type="time"
                             required
+                            className={
+                              dateError
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                : ""
+                            }
                           />
                         </div>
                       </div>
@@ -619,7 +692,7 @@ const SingleTicketTransfer = () => {
                         Ticket Information
                       </h3>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="ticketCount">
                             Number of Tickets *
@@ -872,15 +945,15 @@ const SingleTicketTransfer = () => {
       {/* Event Search Modal */}
       {showEventModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                   Search Ticketmaster Events
                 </h3>
                 <button
                   onClick={() => setShowEventModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl font-bold p-1"
                 >
                   ✕
                 </button>
@@ -890,16 +963,18 @@ const SingleTicketTransfer = () => {
                   type="text"
                   placeholder="Search for events, artists, or venues..."
                   onChange={(e) => searchEvents(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-transparent"
                   autoFocus
                 />
               </div>
             </div>
-            <div className="p-6 overflow-y-auto max-h-96">
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-96">
               {searchingEvents ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p>Searching events...</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Searching events...
+                  </p>
                 </div>
               ) : eventSearchResults.length > 0 ? (
                 <div className="space-y-2">
@@ -910,10 +985,12 @@ const SingleTicketTransfer = () => {
                         selectEvent(event);
                         setShowEventModal(false);
                       }}
-                      className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-l-4 border-l-transparent hover:border-l-primary"
+                      className="p-3 sm:p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-l-4 border-l-transparent hover:border-l-primary"
                     >
-                      <div className="font-medium text-lg dark:text-white">{event.name}</div>
-                      <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
+                      <div className="font-medium text-base sm:text-lg text-gray-900 dark:text-white truncate">
+                        {event.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1 truncate">
                         📍 {event.venue}, {event.city}
                         {event.date &&
                           ` • 📅 ${new Date(event.date).toLocaleDateString()}`}
@@ -923,7 +1000,7 @@ const SingleTicketTransfer = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground dark:text-gray-400">
                     No events found. Try a different search term.
                   </p>
                 </div>
