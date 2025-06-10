@@ -92,22 +92,18 @@ const Layout = ({ children }: LayoutProps) => {
             <Link to="/faq" className="text-sm font-medium hover:text-primary">
               FAQ
             </Link>
-            <li>
-              <Link
-                to="/about"
-                className="text-muted-foreground hover:text-primary"
-              >
-                About Us
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/contact"
-                className="text-muted-foreground hover:text-primary"
-              >
-                Contact
-              </Link>
-            </li>
+            <Link
+              to="/about"
+              className="text-sm font-medium hover:text-primary"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Contact
+            </Link>
           </nav>
 
           {/* Mobile Menu */}
@@ -188,24 +184,20 @@ const Layout = ({ children }: LayoutProps) => {
                     >
                       FAQ
                     </Link>
-                    <li>
-                      <Link
-                        to="/about"
-                        className="text-lg font-medium hover:text-primary py-2"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        About Us
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/contact"
-                        className="text-lg font-medium hover:text-primary py-2"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Contact
-                      </Link>
-                    </li>
+                    <Link
+                      to="/about"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      About Us
+                    </Link>
+                    <Link
+                      to="/contact"
+                      className="text-lg font-medium hover:text-primary py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Contact
+                    </Link>
                   </nav>
 
                   <div className="pt-4 border-t">
@@ -417,6 +409,22 @@ const Layout = ({ children }: LayoutProps) => {
             <div>
               <h4 className="font-medium mb-4">Contact</h4>
               <ul className="space-y-2">
+                <li>
+                  <Link
+                    to="/about"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    Contact
+                  </Link>
+                </li>
                 <li className="text-muted-foreground">support@holdmytix.com</li>
                 <li className="text-muted-foreground">(555) 123-4567</li>
               </ul>

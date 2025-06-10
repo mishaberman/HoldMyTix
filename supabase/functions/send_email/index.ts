@@ -136,74 +136,6 @@ const generateAdminNotificationHTML = (
   </div>
 `;
 
-const generateBuyerConfirmationHTML = (
-  eventName: string,
-  sellerName: string,
-  amount: number,
-  confirmationLink: string,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">Ticket Transfer Confirmation Required</p>
-    </div>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #1f2937; margin-top: 0;">Action Required</h2>
-      <p style="color: #374151; line-height: 1.6;"><strong>${sellerName}</strong> has initiated a ticket transfer for <strong>${eventName}</strong>. Please confirm your details to proceed.</p>
-    </div>
-    
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h3 style="color: #1e40af; margin-top: 0;">💰 Payment Amount</h3>
-      <p style="color: #1e40af; font-size: 24px; font-weight: bold; margin: 0;">${amount.toFixed(2)}</p>
-    </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${confirmationLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">Confirm Transfer Details</a>
-    </div>
-    
-    <div style="background: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #065f46; margin: 0; font-weight: 500;">🔒 Click the link above to confirm your Ticketmaster email and payment method details.</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">Questions? Contact us at <a href="mailto:support@holdmytix.com" style="color: #2563eb;">support@holdmytix.com</a></p>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Thank you,<br>The HoldMyTix Team</p>
-    </div>
-  </div>
-`;
-
-const generateSellerConfirmationHTML = (
-  eventName: string,
-  buyerName: string,
-  confirmationLink: string,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">Ticket Transfer Confirmation Required</p>
-    </div>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #1f2937; margin-top: 0;">Action Required</h2>
-      <p style="color: #374151; line-height: 1.6;">You have initiated a ticket transfer to <strong>${buyerName}</strong> for <strong>${eventName}</strong>. Please confirm your details to proceed.</p>
-    </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${confirmationLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">Confirm Transfer Details</a>
-    </div>
-    
-    <div style="background: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #065f46; margin: 0; font-weight: 500;">🔒 Click the link above to confirm your Ticketmaster email and provide transfer instructions.</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">Questions? Contact us at <a href="mailto:support@holdmytix.com" style="color: #2563eb;">support@holdmytix.com</a></p>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Thank you,<br>The HoldMyTix Team</p>
-    </div>
-  </div>
-`;
-
 const generateContactUsHTML = (
   name: string,
   email: string,
@@ -382,33 +314,6 @@ Deno.serve(async (req) => {
             data.sellerName,
             data.eventName,
             data.amount,
-          ),
-        };
-        break;
-
-      case "buyer_confirmation":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: data.buyerEmail,
-          subject: `HoldMyTix: Confirm your ticket purchase for ${data.eventName}`,
-          html: generateBuyerConfirmationHTML(
-            data.eventName,
-            data.sellerName,
-            data.amount,
-            data.confirmationLink,
-          ),
-        };
-        break;
-
-      case "seller_confirmation":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: data.sellerEmail,
-          subject: `HoldMyTix: Confirm your ticket sale for ${data.eventName}`,
-          html: generateSellerConfirmationHTML(
-            data.eventName,
-            data.buyerName,
-            data.confirmationLink,
           ),
         };
         break;

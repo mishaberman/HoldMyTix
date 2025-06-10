@@ -24,6 +24,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { sendContactUsEmail } from "@/lib/email";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { trackLead, getEnhancedUserData } from "@/lib/facebook-pixel";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -38,6 +40,7 @@ type ContactFormData = z.infer<typeof contactFormSchema>;
 const ContactUs = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth0();
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
@@ -54,12 +57,10 @@ const ContactUs = () => {
     setIsSubmitting(true);
 
     // Track Facebook Pixel event
-    if (typeof window !== "undefined" && (window as any).fbq) {
-      (window as any).fbq("track", "Contact", {
-        content_name: "Contact Form Submission",
-        content_category: "Contact",
-      });
-    }
+    const userData = isAuthenticated
+      ? getEnhancedUserData(user)
+      : getEnhancedUserData();
+    trackLead(userData);
 
     try {
       const result = await sendContactUsEmail(
