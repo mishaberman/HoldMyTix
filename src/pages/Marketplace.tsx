@@ -5,18 +5,21 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Clock, ArrowRight, Loader2 } from "lucide-react";
+import { trackSearch, trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const Marketplace = () => {
+  const { user, isAuthenticated } = useAuth0();
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
 
   useEffect(() => {
     fetchTicketmasterEvents();
@@ -54,6 +57,18 @@ const Marketplace = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = () => {
+    // Track search event
+    if (searchTerm.trim()) {
+      trackSearch(searchTerm, userData);
+    }
+
+    // Implement search functionality
+    console.log("Searching for:", searchTerm);
   };
 
   return (
@@ -102,7 +117,13 @@ const Marketplace = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {upcomingEvents.map((event) => (
-              <Card key={event.id} className="overflow-hidden">
+              <Card
+                key={event.id}
+                className="overflow-hidden"
+                onClick={() => {
+                  trackViewContent(event.name, "event_listing", userData);
+                }}
+              >
                 <div className="h-48 overflow-hidden">
                   <img
                     src={event.imageUrl}

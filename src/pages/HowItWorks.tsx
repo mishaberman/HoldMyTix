@@ -1,12 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Clock, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { trackViewContent, trackInitiateCheckout, getEnhancedUserData } from "@/lib/facebook-pixel";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth0();
+  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
+
+  useEffect(() => {
+    trackViewContent("How It Works", "how_it_works", userData);
+  }, [userData]);
+
+  const handleGetStartedClick = () => {
+    trackInitiateCheckout(undefined, "USD", userData);
+  };
 
   return (
     <Layout>

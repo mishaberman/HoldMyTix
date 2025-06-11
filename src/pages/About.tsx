@@ -1,8 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Shield } from "lucide-react";
+import { trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const About = () => {
+  const { user, isAuthenticated } = useAuth0();
+  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
+
+  useEffect(() => {
+    trackViewContent("About Page", "about", userData);
+  }, [userData]);
+
   return (
     <Layout>
       <div className="container py-12">

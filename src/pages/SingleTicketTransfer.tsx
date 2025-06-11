@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { trackInitiateCheckout, trackPurchase, trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
 
 const SingleTicketTransfer = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -68,6 +69,7 @@ const SingleTicketTransfer = () => {
   const [searchingEvents, setSearchingEvents] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [initialEvents, setInitialEvents] = useState([]);
+  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
 
   // Load initial events when component mounts
   useEffect(() => {
@@ -456,6 +458,12 @@ const SingleTicketTransfer = () => {
       } else {
         console.log("Transfer saved to database:", transferResult.data);
       }
+
+      // Track purchase initiation
+      trackInitiateCheckout(parseFloat(formData.price) * parseInt(formData.ticketCount), "USD", userData);
+
+      // Track completed purchase
+      trackPurchase(parseFloat(formData.price) * parseInt(formData.ticketCount), "USD", userData);
 
       // Show success message and redirect after delay
       setSuccess(true);

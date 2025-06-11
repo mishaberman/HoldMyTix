@@ -12,10 +12,12 @@ import {
   User,
   LogOut,
 } from "lucide-react";
+import { trackViewContent, trackInitiateCheckout, getEnhancedUserData } from "@/lib/facebook-pixel";
 
 const Home = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading, user, logout } = useAuth0();
+  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
 
   const handleLogout = () => {
     logout({
@@ -24,6 +26,15 @@ const Home = () => {
       },
     });
   };
+
+  const handleGetStartedClick = () => {
+    trackInitiateCheckout(undefined, "USD", userData);
+  };
+
+  const handleViewContentClick = (contentName: string) => {
+    trackViewContent(contentName, "home_section", userData);
+  };
+
 
   return (
     <div className="min-h-screen bg-background">

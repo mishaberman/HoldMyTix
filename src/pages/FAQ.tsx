@@ -1,13 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
+import { useAuth0 } from "@auth0/auth0-react";
 import Layout from "@/components/layout/Layout";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 const FAQ = () => {
+  const { user, isAuthenticated } = useAuth0();
+  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
+
+  useEffect(() => {
+    trackViewContent("FAQ Page", "faq", userData);
+  }, [userData]);
+
   return (
     <Layout>
       <div className="container py-12">

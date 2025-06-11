@@ -39,15 +39,20 @@
 
       // Initialize Facebook Pixel
       if (typeof fbq !== "undefined") {
-        fbq("init", "1442987863380686"); // Replace with actual pixel ID
+        fbq("init", "1442987863380686");
         fbq("track", "PageView");
 
-        // Enhanced data collection
+        // Enhanced data collection - automatic advanced matching
         fbq("init", "1442987863380686", {
           em: "", // Will be set dynamically when user data is available
           ph: "", // Will be set dynamically when user data is available
           external_id: "", // Will be set dynamically when user data is available
+        }, {
+          agent: "plvite" // Platform identifier
         });
+
+        // Enable automatic advanced matching
+        fbq("set", "autoConfig", false, "1442987863380686");
       }
 
       // Fallback for blocked pixels - collect fbclid
@@ -71,7 +76,7 @@
         height="1"
         width="1"
         style="display: none"
-        src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"
+        src="https://www.facebook.com/tr?id=1442987863380686&ev=PageView&noscript=1"
     /></noscript>
     <!-- End Facebook Pixel Code -->
   </body>

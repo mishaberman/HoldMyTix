@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from "react";
-import Layout from "@/components/layout/Layout";
 import { useAuth0 } from "@auth0/auth0-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, Ticket, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
+import Layout from "@/components/layout/Layout";
 import { getUserTransactions } from "@/lib/api";
-import { Loader2, Plus, Eye, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Plus, Eye } from "lucide-react";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -24,6 +21,12 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [filteredTransfers, setFilteredTransfers] = useState([]);
+  const userData = getEnhancedUserData(user);
+
+  // Track dashboard view
+  useEffect(() => {
+    trackViewContent("User Dashboard", "dashboard", userData);
+  }, [userData]);
 
   // Save active tab to localStorage
   useEffect(() => {

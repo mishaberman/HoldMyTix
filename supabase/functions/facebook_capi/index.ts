@@ -14,6 +14,28 @@ const FACEBOOK_PIXEL_ID = Deno.env.get("FACEBOOK_PIXEL_ID") || "YOUR_PIXEL_ID";
 const FACEBOOK_ACCESS_TOKEN =
   Deno.env.get("FACEBOOK_ACCESS_TOKEN") || "YOUR_ACCESS_TOKEN";
 
+// Enhanced event validation
+const VALID_EVENTS = [
+  'PageView',
+  'ViewContent',
+  'Search',
+  'Lead',
+  'InitiateCheckout',
+  'AddPaymentInfo',
+  'Purchase',
+  'CompleteRegistration',
+  'Subscribe',
+  'StartTrial',
+  'Contact',
+  'CustomizeProduct',
+  'Donate',
+  'FindLocation',
+  'Schedule',
+  'SubmitApplication',
+  'AddToCart',
+  'AddToWishlist'
+];
+
 interface FacebookEvent {
   event_name: string;
   event_time: number;
@@ -142,6 +164,11 @@ Deno.serve(async (req) => {
       throw new Error("event_name is required");
     }
 
+    // Validate event name
+    if (!VALID_EVENTS.includes(eventData.event_name)) {
+      console.warn(`Unknown event type: ${eventData.event_name}. Proceeding anyway.`);
+    }
+
     // Add client IP if not provided
     if (eventData.user_data && !eventData.user_data.client_ip_address) {
       eventData.user_data.client_ip_address = getClientIP(req);
@@ -194,9 +221,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Log successful event for monitoring
+    // Log successful event for monitoring with more details
     console.log(
       `Successfully sent ${eventData.event_name} event to Facebook CAPI`,
+      {
+        event_name: eventData.event_name,
+        event_time: eventData.event_time,
+        has_user_data: !!eventData.user_data,
+        custom_data_keys: eventData.custom_data ? Object.keys(eventData.custom_data) : [],
+        action_source: eventData.action_source
+      }
     );
 
     return new Response(
