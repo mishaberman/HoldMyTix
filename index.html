@@ -41,18 +41,6 @@
       if (typeof fbq !== "undefined") {
         fbq("init", "1442987863380686");
         fbq("track", "PageView");
-
-        // Enhanced data collection - automatic advanced matching
-        fbq("init", "1442987863380686", {
-          em: "", // Will be set dynamically when user data is available
-          ph: "", // Will be set dynamically when user data is available
-          external_id: "", // Will be set dynamically when user data is available
-        }, {
-          agent: "plvite" // Platform identifier
-        });
-
-        // Enable automatic advanced matching
-        fbq("set", "autoConfig", false, "1442987863380686");
       }
 
       // Fallback for blocked pixels - collect fbclid
