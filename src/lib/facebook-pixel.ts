@@ -235,3 +235,11 @@ export const trackViewContent = (
     userData,
   );
 };
+
+// Initialize Facebook Pixel
+export const initializeFacebookPixel = () => {
+  if (typeof window !== 'undefined' && typeof fbq !== 'undefined') {
+    fbq('init', PIXEL_ID);
+    fbq('track', 'PageView');
+  }
+};

@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -71,6 +72,16 @@ const Marketplace = () => {
     console.log("Searching for:", searchTerm);
   };
 
+  useEffect(() => {
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'Marketplace',
+        content_category: 'marketplace'
+      });
+    }
+  }, []);
+
   return (
     <Layout>
       <div className="container py-8">
@@ -120,9 +131,6 @@ const Marketplace = () => {
               <Card
                 key={event.id}
                 className="overflow-hidden"
-                onClick={() => {
-                  trackViewContent(event.name, "event_listing", userData);
-                }}
               >
                 <div className="h-48 overflow-hidden">
                   <img

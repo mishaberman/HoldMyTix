@@ -13,8 +13,14 @@ const HowItWorks = () => {
   const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
 
   useEffect(() => {
-    trackViewContent("How It Works", "how_it_works", userData);
-  }, [userData]);
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'How It Works',
+        content_category: 'informational'
+      });
+    }
+  }, []);
 
   const handleGetStartedClick = () => {
     trackInitiateCheckout(undefined, "USD", userData);

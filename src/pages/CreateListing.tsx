@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,11 +7,22 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter, // Added import for CardFooter
 } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Clock, ArrowRight } from "lucide-react";
 
 const CreateListing = () => {
+  useEffect(() => {
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'Create Listing',
+        content_category: 'marketplace'
+      });
+    }
+  }, []);
+
   return (
     <Layout>
       <div className="container py-8">

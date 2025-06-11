@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -92,6 +92,16 @@ const ContactUs = () => {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'Contact Us',
+        content_category: 'support'
+      });
+    }
+  }, []);
 
   return (
     <Layout>

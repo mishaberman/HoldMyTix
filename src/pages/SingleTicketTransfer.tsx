@@ -24,9 +24,9 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter, //Imported CardFooter
 } from "@/components/ui/card";
 import {
   Select,
@@ -463,7 +463,24 @@ const SingleTicketTransfer = () => {
       trackInitiateCheckout(parseFloat(formData.price) * parseInt(formData.ticketCount), "USD", userData);
 
       // Track completed purchase
-      trackPurchase(parseFloat(formData.price) * parseInt(formData.ticketCount), "USD", userData);
+      // Track ticket transfer initiated event
+      const ticketPrice = parseFloat(formData.price) * parseInt(formData.ticketCount);
+      const sellerName = isSeller ? user?.name || "" : formData.sellerName;
+      const buyerName = isSeller ? formData.buyerName : user?.name || "";
+      const paymentMethod = isSeller ? "TBD" : "Venmo";
+
+      if (typeof fbq !== 'undefined') {
+        fbq('trackCustom', 'TicketTransferInitiated', {
+          value: ticketPrice || 0,
+          currency: 'USD',
+          content_name: `${sellerName} -> ${buyerName} Ticket Transfer`,
+          content_category: 'ticket_transfer',
+          seller_name: sellerName,
+          buyer_name: buyerName,
+          ticket_price: ticketPrice,
+          payment_method: paymentMethod
+        });
+      }
 
       // Show success message and redirect after delay
       setSuccess(true);
@@ -484,6 +501,24 @@ const SingleTicketTransfer = () => {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'Single Ticket Transfer',
+        content_category: 'ticket_transfer'
+      });
+
+      fbq('track', 'ViewContent', {
+        content_name: 'Single Ticket Transfer',
+        content_category: 'page',
+        custom_data: {
+          page: 'TicketTransferPage'
+        }
+      });
+    }
+  }, []);
 
   if (isLoading) {
     return (

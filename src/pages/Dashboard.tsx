@@ -25,8 +25,14 @@ const Dashboard = () => {
 
   // Track dashboard view
   useEffect(() => {
-    trackViewContent("User Dashboard", "dashboard", userData);
-  }, [userData]);
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'Dashboard',
+        content_category: 'account'
+      });
+    }
+  }, []);
 
   // Save active tab to localStorage
   useEffect(() => {

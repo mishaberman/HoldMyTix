@@ -10,8 +10,14 @@ const FAQ = () => {
   const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
 
   useEffect(() => {
-    trackViewContent("FAQ Page", "faq", userData);
-  }, [userData]);
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'FAQ',
+        content_category: 'support'
+      });
+    }
+  }, []);
 
   return (
     <Layout>

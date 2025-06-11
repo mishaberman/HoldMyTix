@@ -9,8 +9,14 @@ const About = () => {
   const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
 
   useEffect(() => {
-    trackViewContent("About Page", "about", userData);
-  }, [userData]);
+    // Track page view
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'PageView', {
+        content_name: 'About',
+        content_category: 'informational'
+      });
+    }
+  }, []);
 
   return (
     <Layout>
