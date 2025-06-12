@@ -23,6 +23,8 @@ const TransferDetails = lazy(() => import("./pages/TransferDetails"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Callback = lazy(() => import("./pages/Callback"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 
 // Import tempo routes
 let routes: any[] = [];
@@ -106,6 +108,8 @@ function App() {
                 </AuthGuard>
               }
             />
+            <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+            <Route path="/termsofuse" element={<TermsOfUse />} />
 
             {/* Add tempo route before catchall */}
             {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
