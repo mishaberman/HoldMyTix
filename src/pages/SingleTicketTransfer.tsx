@@ -54,7 +54,12 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { trackInitiateCheckout, trackPurchase, trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
+import {
+  trackInitiateCheckout,
+  trackPurchase,
+  trackViewContent,
+  getEnhancedUserData,
+} from "@/lib/facebook-pixel";
 
 const SingleTicketTransfer = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -69,7 +74,9 @@ const SingleTicketTransfer = () => {
   const [searchingEvents, setSearchingEvents] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [initialEvents, setInitialEvents] = useState([]);
-  const userData = isAuthenticated ? getEnhancedUserData(user) : getEnhancedUserData();
+  const userData = isAuthenticated
+    ? getEnhancedUserData(user)
+    : getEnhancedUserData();
 
   // Load initial events when component mounts
   useEffect(() => {
@@ -460,25 +467,30 @@ const SingleTicketTransfer = () => {
       }
 
       // Track purchase initiation
-      trackInitiateCheckout(parseFloat(formData.price) * parseInt(formData.ticketCount), "USD", userData);
+      trackInitiateCheckout(
+        parseFloat(formData.price) * parseInt(formData.ticketCount),
+        "USD",
+        userData,
+      );
 
       // Track completed purchase
       // Track ticket transfer initiated event
-      const ticketPrice = parseFloat(formData.price) * parseInt(formData.ticketCount);
+      const ticketPrice =
+        parseFloat(formData.price) * parseInt(formData.ticketCount);
       const sellerName = isSeller ? user?.name || "" : formData.sellerName;
       const buyerName = isSeller ? formData.buyerName : user?.name || "";
       const paymentMethod = isSeller ? "TBD" : "Venmo";
 
-      if (typeof fbq !== 'undefined') {
-        fbq('trackCustom', 'TicketTransferInitiated', {
+      if (typeof fbq !== "undefined") {
+        fbq("trackCustom", "TicketTransferInitiated", {
           value: ticketPrice || 0,
-          currency: 'USD',
+          currency: "USD",
           content_name: `${sellerName} -> ${buyerName} Ticket Transfer`,
-          content_category: 'ticket_transfer',
+          content_category: "ticket_transfer",
           seller_name: sellerName,
           buyer_name: buyerName,
           ticket_price: ticketPrice,
-          payment_method: paymentMethod
+          payment_method: paymentMethod,
         });
       }
 
@@ -504,18 +516,18 @@ const SingleTicketTransfer = () => {
 
   useEffect(() => {
     // Track page view
-    if (typeof fbq !== 'undefined') {
-      fbq('track', 'PageView', {
-        content_name: 'Single Ticket Transfer',
-        content_category: 'ticket_transfer'
+    if (typeof fbq !== "undefined") {
+      fbq("track", "PageView", {
+        content_name: "Single Ticket Transfer",
+        content_category: "ticket_transfer",
       });
 
-      fbq('track', 'ViewContent', {
-        content_name: 'Single Ticket Transfer',
-        content_category: 'page',
+      fbq("track", "ViewContent", {
+        content_name: "Single Ticket Transfer",
+        content_category: "page",
         custom_data: {
-          page: 'TicketTransferPage'
-        }
+          page: "TicketTransferPage",
+        },
       });
     }
   }, []);
@@ -813,10 +825,18 @@ const SingleTicketTransfer = () => {
                             <SelectItem value="ticketmaster">
                               Ticketmaster
                             </SelectItem>
-                            <SelectItem value="stubhub" disabled>StubHub (Coming Soon)</SelectItem>
-                            <SelectItem value="seatgeek" disabled>SeatGeek (Coming Soon)</SelectItem>
-                            <SelectItem value="axs">AXS</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="stubhub" disabled>
+                              StubHub (Coming Soon)
+                            </SelectItem>
+                            <SelectItem value="seatgeek" disabled>
+                              SeatGeek (Coming Soon)
+                            </SelectItem>
+                            <SelectItem value="axs" disabled>
+                              AXS (Coming Soon)
+                            </SelectItem>
+                            <SelectItem value="other" disabled>
+                              Other (Coming Soon)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
