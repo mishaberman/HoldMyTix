@@ -813,8 +813,8 @@ const SingleTicketTransfer = () => {
                             <SelectItem value="ticketmaster">
                               Ticketmaster
                             </SelectItem>
-                            <SelectItem value="stubhub">StubHub</SelectItem>
-                            <SelectItem value="seatgeek">SeatGeek</SelectItem>
+                            <SelectItem value="stubhub" disabled>StubHub (Coming Soon)</SelectItem>
+                            <SelectItem value="seatgeek" disabled>SeatGeek (Coming Soon)</SelectItem>
                             <SelectItem value="axs">AXS</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>

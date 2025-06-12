@@ -25,7 +25,9 @@ const SignIn = () => {
   return (
     <div className="min-h-screen bg-muted flex flex-col">
       <div className="container flex h-16 items-center">
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
+          <img src="/logo.svg" alt="HoldMyTix" className="h-8 w-8 mr-2" /> {/* Add logo here */}
           <Shield className="h-6 w-6 text-primary" />
           <span className="text-xl font-bold">HoldMyTix</span>
         </Link>
