@@ -1,15 +1,16 @@
-
 export const initiateDocuSignAuth = () => {
   const clientId = "297ca827-212d-437f-8f42-76de497ed99f";
-  const redirectUri = "https://www.holdmytix.com/docusign-callback";
+  // Redirect directly to your Supabase edge function
+  const redirectUri =
+    "https://angry-ardinghelli9-se6rs.view.tempo-dev.app/supabase-functions-docusign_callback";
   const scope = "signature";
-  
+
   const authUrl = new URL("https://account-d.docusign.com/oauth/auth");
   authUrl.searchParams.append("response_type", "code");
   authUrl.searchParams.append("scope", scope);
   authUrl.searchParams.append("client_id", clientId);
   authUrl.searchParams.append("redirect_uri", redirectUri);
-  
+
   window.location.href = authUrl.toString();
 };
 
