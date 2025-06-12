@@ -25,58 +25,73 @@ serve(async (req) => {
       transferId
     } = await req.json()
 
-    // DocuSign JWT configuration
-    const docusignClientId = "297ca827-212d-437f-8f42-76de497ed99f"
-    const docusignUserId = Deno.env.get('DOCUSIGN_USER_ID') || 'your-user-id'
-    const docusignPrivateKey = Deno.env.get('DOCUSIGN_PRIVATE_KEY') || ''
+    // DocuSign configuration
     const templateId = "93c9fcab-3bf5-441c-a131-642ef320f0c3"
     
-    // DocuSign API endpoint (sandbox)
-    const docusignBaseUrl = "https://demo.docusign.net/restapi"
-    const docusignAuthUrl = "https://account-d.docusign.com/oauth/token"
-    
-    // Create JWT token
-    const now = Math.floor(Date.now() / 1000)
-    const payload = {
-      iss: docusignClientId,
-      sub: docusignUserId,
-      aud: "account-d.docusign.com",
-      iat: now,
-      exp: now + 3600, // 1 hour expiration
-      scope: "signature impersonation"
+    // Get stored OAuth tokens from Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+    // Get the most recent DocuSign token (you might want to filter by a specific user)
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('docusign_tokens')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (tokenError || !tokenData) {
+      throw new Error('No DocuSign authentication found. Please authenticate with DocuSign first.')
     }
 
-    // Convert private key from environment variable
-    const privateKeyPem = docusignPrivateKey.replace(/\\n/g, '\n')
-    const key = await crypto.subtle.importKey(
-      "pkcs8",
-      new TextEncoder().encode(privateKeyPem),
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["sign"]
-    )
+    // Check if token is expired
+    const expiresAt = new Date(tokenData.expires_at)
+    const now = new Date()
+    
+    let accessToken = tokenData.access_token
+    let docusignBaseUrl = tokenData.base_uri + "/restapi"
 
-    const jwt = await create({ alg: "RS256", typ: "JWT" }, payload, key)
+    // If token is expired, refresh it
+    if (now >= expiresAt && tokenData.refresh_token) {
+      const clientId = Deno.env.get("DOCUSIGN_CLIENT_ID") || "297ca827-212d-437f-8f42-76de497ed99f"
+      const clientSecret = Deno.env.get("DOCUSIGN_CLIENT_SECRET")
+      
+      if (!clientSecret) {
+        throw new Error("DOCUSIGN_CLIENT_SECRET is required for token refresh")
+      }
 
-    // Exchange JWT for access token
-    const tokenResponse = await fetch(docusignAuthUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt
+      const refreshResponse = await fetch("https://account-d.docusign.com/oauth/token", {
+        method: 'POST',
+        headers: {
+          "Authorization": "Basic " + btoa(`${clientId}:${clientSecret}`),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: tokenData.refresh_token
+        })
       })
-    })
 
-    const tokenData = await tokenResponse.json()
-    
-    if (!tokenResponse.ok) {
-      throw new Error(`Token exchange failed: ${tokenData.error_description || tokenData.error}`)
+      const refreshData = await refreshResponse.json()
+      
+      if (!refreshResponse.ok) {
+        throw new Error(`Token refresh failed: ${refreshData.error_description || refreshData.error}`)
+      }
+
+      accessToken = refreshData.access_token
+
+      // Update stored tokens
+      await supabase
+        .from('docusign_tokens')
+        .update({
+          access_token: refreshData.access_token,
+          refresh_token: refreshData.refresh_token || tokenData.refresh_token,
+          expires_at: new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', tokenData.id)
     }
-
-    const accessToken = tokenData.access_token
 
     // Create envelope with template
     const envelopeData = {
@@ -188,10 +203,7 @@ serve(async (req) => {
       throw new Error(`DocuSign API error: ${result.message || 'Unknown error'}`)
     }
 
-    // Store DocuSign log in Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    // Store DocuSign log in Supabase (client already created above)
 
     await supabase
       .from('docusign_logs')
