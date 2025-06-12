@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -8,11 +9,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ProgressTracker, ProgressStep } from "@/components/ui/progress-tracker";
+import {
+  ProgressTracker,
+  ProgressStep,
+} from "@/components/ui/progress-tracker";
 import {
   Calendar,
   MapPin,
