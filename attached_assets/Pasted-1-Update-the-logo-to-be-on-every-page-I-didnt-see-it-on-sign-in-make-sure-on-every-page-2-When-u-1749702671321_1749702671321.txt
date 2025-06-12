@@ -1,0 +1,22 @@
+1. Update the logo to be on every page, I didnt see it on sign in, make sure on every page
+2. When updating status of a transfer and marking the transfer as, payment received, etc, I get error the Could not find the 'buyer_ticketmaster_email' column of 'ticket_transfers' in the schema cache"
+3. When entering a previous date in the ticket transfer, I get 2 errors at the top instead of 1, saying  
+* Event date must be in the future. Please select a future date and time.
+* Date Validation Error
+* Invalid event date or time format
+
+	make sure its only 1 error that shows, no need to show multiple. 
+
+4. Create a dominos pizza tracker like status, that shows for each transfer details, that goes thru the steps of: transfer request initiated, payment and Ticketmaster account details provided, payment received, ticket received, payment sent, ticket sent, and complete. And have a status for if the process was cancelled. Update these statuses along the way and show the progress in the ticket transfer details view. Also include the status of Docusign documents all signed. 
+5. For the ticket providers dropdown in the request form, make only Ticketmaster available, with the other options not selectable and saying coming soon.
+6. Upon creating a transfer request, use the Docusign API to send a new envelope. Here are the Docusign details:
+    1. template: 93c9fcab-3bf5-441c-a131-642ef320f0c3
+    2. Fields to send in the API call that are template fields needed to be inserted into the doc: 
+        1. transferRequestDate: date of the transition request
+        2. eventName : event name
+        3. eventDate : event date
+        4. seatInfo : seat info
+        5. totalPrice : total price of the event
+    3. When sending, send to the ‘Buyer’ role, the ‘Seller’ role, and to me, the ‘HoldMyTix’ role, although I think it will automatically send to holdmytix so that might not be necessary to fill out
+    4. Use my Docusign API key: 19f46af0-cedf-4b3b-83fd-c575c4eba749
+    5. I have supabase edge functions so have the Docusign api calls go to supabase 
