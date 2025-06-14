@@ -62,6 +62,7 @@ import {
 } from "@/lib/facebook-pixel";
 
 const SingleTicketTransfer = () => {
+  const sendEmail = false;
   const { user, isAuthenticated, isLoading } = useAuth0();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("seller");
