@@ -403,7 +403,9 @@ return {
         // Don't fail the entire process if DocuSign fails
       }
 
-      // Send emails
+      if(sendEmail == true)
+      {
+        // Send emails
       if (isSeller) {
         await sendBuyerInstructions(
           formData.buyerEmail,
@@ -418,8 +420,7 @@ return {
           formData.eventName
         );
       }
-
-      // Send admin notification
+          // Send admin notification
       await sendAdminNotification(
         formData.eventName,
         isSeller ? user?.email || "" : formData.sellerEmail,
@@ -438,6 +439,9 @@ return {
         isSeller ? formData.buyerName : user?.name || "",
         isSeller ? formData.buyerEmail : user?.email || ""
       );
+      }
+
+    
 
       // Track events
       trackInitiateCheckout(
