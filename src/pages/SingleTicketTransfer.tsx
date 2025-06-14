@@ -120,7 +120,7 @@ const formattedTomorrow = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() +
 return {
   eventName: "Test Event Name",
   eventDate: formattedTomorrow,
-  eventTime: "8:00 PM",
+  eventTime: "18:00",
   venue: "Madison Square Garden",
   ticketCount: "1",
   ticketSection: "A",
