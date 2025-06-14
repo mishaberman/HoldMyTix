@@ -109,23 +109,31 @@ const SingleTicketTransfer = () => {
       }
     }
 
-    return {
-      eventName: "",
-      eventDate: "",
-      eventTime: "",
-      venue: "",
-      ticketCount: "1",
-      ticketSection: "",
-      ticketRow: "",
-      ticketSeat: "",
-      ticketProvider: "ticketmaster",
-      ticketNotes: "",
-      price: "",
-      sellerName: "",
-      sellerEmail: "",
-      buyerName: "",
-      buyerEmail: "",
-    };
+
+    const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(today.getDate() + 1);
+
+const pad = (num) => String(num).padStart(2, '0');
+const formattedTomorrow = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+
+return {
+  eventName: "Test Event Name",
+  eventDate: formattedTomorrow,
+  eventTime: "8:00 PM",
+  venue: "Madison Square Garden",
+  ticketCount: "1",
+  ticketSection: "A",
+  ticketRow: "1",
+  ticketSeat: "1",
+  ticketProvider: "ticketmaster",
+  ticketNotes: "VIP access included",
+  price: "250",
+  sellerName: "Misha Seller",
+  sellerEmail: "mishaberman+seller@gmail.com",
+  buyerName: "Misha Buyer",
+  buyerEmail: "mishaberman+buyer@gmail.com",
+};
   });
 
   // Save form data to localStorage whenever it changes
