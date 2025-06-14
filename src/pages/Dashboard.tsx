@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Ticket, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackViewContent, getEnhancedUserData } from "@/lib/facebook-pixel";
 import Layout from "@/components/layout/Layout";
 import { getUserTransactions } from "@/lib/api";
-import { Loader2, Plus, Eye } from "lucide-react";
+import { Loader2, Plus, Eye, Search, Filter } from "lucide-react";
 
 const Dashboard = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -20,16 +22,16 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("transfers");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
   const [filteredTransfers, setFilteredTransfers] = useState([]);
   const userData = getEnhancedUserData(user);
 
   // Track dashboard view
   useEffect(() => {
-    // Track page view
-    if (typeof fbq !== 'undefined') {
-      fbq('track', 'PageView', {
-        content_name: 'Dashboard',
-        content_category: 'account'
+    if (typeof fbq !== "undefined") {
+      fbq("track", "PageView", {
+        content_name: "Dashboard",
+        content_category: "account",
       });
     }
   }, []);
@@ -40,37 +42,62 @@ const Dashboard = () => {
       try {
         localStorage.setItem("dashboardActiveTab", activeTab);
       } catch (e) {
-        // Handle localStorage errors gracefully
         console.warn("Could not save to localStorage:", e);
       }
     }
   }, [activeTab]);
 
-  // Filter transfers based on search and status
+  // Enhanced filtering logic
   useEffect(() => {
     let filtered = transfers;
 
-    if (searchQuery) {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (transfer) =>
-          transfer.eventName
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          transfer.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          transfer.counterparty
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()),
+          transfer.eventName?.toLowerCase().includes(query) ||
+          transfer.venue?.toLowerCase().includes(query) ||
+          transfer.counterparty?.toLowerCase().includes(query) ||
+          transfer.contractId?.toLowerCase().includes(query) ||
+          transfer.id?.toLowerCase().includes(query)
       );
     }
 
+    // Status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter(
-        (transfer) => transfer.status === statusFilter,
-      );
+      filtered = filtered.filter((transfer) => transfer.status === statusFilter);
+    }
+
+    // Date filter
+    if (dateFilter !== "all") {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (dateFilter) {
+        case "today":
+          filterDate.setHours(0, 0, 0, 0);
+          filtered = filtered.filter(
+            (transfer) => new Date(transfer.createdAt) >= filterDate
+          );
+          break;
+        case "week":
+          filterDate.setDate(now.getDate() - 7);
+          filtered = filtered.filter(
+            (transfer) => new Date(transfer.createdAt) >= filterDate
+          );
+          break;
+        case "month":
+          filterDate.setMonth(now.getMonth() - 1);
+          filtered = filtered.filter(
+            (transfer) => new Date(transfer.createdAt) >= filterDate
+          );
+          break;
+      }
     }
 
     setFilteredTransfers(filtered);
-  }, [transfers, searchQuery, statusFilter]);
+  }, [transfers, searchQuery, statusFilter, dateFilter]);
 
   useEffect(() => {
     if (isAuthenticated && user?.sub) {
@@ -109,6 +136,13 @@ const Dashboard = () => {
         createdAt: transfer.created_at,
         timeRemaining: transfer.time_remaining,
         expirationTime: transfer.expiration_time,
+        // Additional fields for better filtering
+        sellerEmail: transfer.seller_email,
+        buyerEmail: transfer.buyer_email,
+        paymentReceived: transfer.payment_received,
+        paymentSent: transfer.payment_sent,
+        ticketReceived: transfer.ticket_received,
+        ticketSent: transfer.ticket_sent,
       }));
 
       setTransfers(transformedTransfers);
@@ -167,6 +201,31 @@ const Dashboard = () => {
     }
   };
 
+  const getProgressBadge = (transfer: any) => {
+    const steps = [
+      transfer.paymentReceived,
+      transfer.ticketReceived,
+      transfer.paymentSent,
+      transfer.ticketSent,
+    ];
+    const completed = steps.filter(Boolean).length;
+    const total = steps.length;
+    
+    if (completed === 0) {
+      return <Badge variant="outline" className="bg-gray-100">Not Started</Badge>;
+    } else if (completed === total) {
+      return <Badge className="bg-green-100 text-green-800">Complete</Badge>;
+    } else {
+      return <Badge className="bg-blue-100 text-blue-800">{completed}/{total} Steps</Badge>;
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setDateFilter("all");
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -216,6 +275,63 @@ const Dashboard = () => {
           </Button>
         </div>
 
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Transfers</p>
+                  <p className="text-2xl font-bold">{transfers.length}</p>
+                </div>
+                <Ticket className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active</p>
+                  <p className="text-2xl font-bold">
+                    {transfers.filter(t => t.status === 'pending').length}
+                  </p>
+                </div>
+                <Clock className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold">
+                    {transfers.filter(t => t.status === 'completed').length}
+                  </p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                  <p className="text-2xl font-bold">
+                    ${transfers.reduce((sum, t) => sum + (t.price || 0), 0).toFixed(2)}
+                  </p>
+                </div>
+                <PlusCircle className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="transfers">My Transfers</TabsTrigger>
@@ -224,28 +340,60 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="transfers" className="mt-6">
-            {/* Search and Filter Controls */}
-            <div className="flex gap-4 mb-6">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search transfers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
+            {/* Enhanced Search and Filter Controls */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search transfers by event, venue, or ID..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-full md:w-[180px]">
+                      <SelectValue placeholder="Filter by date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {(searchQuery || statusFilter !== "all" || dateFilter !== "all") && (
+                    <Button variant="outline" onClick={clearFilters}>
+                      Clear Filters
+                    </Button>
+                
+                  )}
+                </div>
+
+                {/* Filter Summary */}
+                {filteredTransfers.length !== transfers.length && (
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    Showing {filteredTransfers.length} of {transfers.length} transfers
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <div className="grid gap-6">
               {loading ? (
@@ -271,11 +419,14 @@ const Dashboard = () => {
                             {new Date(transfer.eventDate).toLocaleDateString()}
                           </CardDescription>
                         </div>
-                        {getStatusBadge(transfer.status)}
+                        <div className="flex flex-col gap-2 items-end">
+                          {getStatusBadge(transfer.status)}
+                          {getProgressBadge(transfer)}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid md:grid-cols-3 gap-4 mb-4">
+                      <div className="grid md:grid-cols-4 gap-4 mb-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Role</p>
                           <p className="font-medium">
@@ -296,7 +447,32 @@ const Dashboard = () => {
                             {transfer.ticketQuantity || 1} ticket(s)
                           </p>
                         </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            Contract ID
+                          </p>
+                          <p className="font-medium text-xs">
+                            {transfer.contractId}
+                          </p>
+                        </div>
                       </div>
+                      
+                      {/* Progress indicators */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                        <div className={`text-xs p-2 rounded ${transfer.paymentReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                          💰 Payment {transfer.paymentReceived ? 'Received' : 'Pending'}
+                        </div>
+                        <div className={`text-xs p-2 rounded ${transfer.ticketReceived ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                          🎫 Ticket {transfer.ticketReceived ? 'Received' : 'Pending'}
+                        </div>
+                        <div className={`text-xs p-2 rounded ${transfer.paymentSent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                          💸 Payment {transfer.paymentSent ? 'Sent' : 'Pending'}
+                        </div>
+                        <div className={`text-xs p-2 rounded ${transfer.ticketSent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                          📤 Ticket {transfer.ticketSent ? 'Sent' : 'Pending'}
+                        </div>
+                      </div>
+
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="text-sm text-muted-foreground">
@@ -323,6 +499,9 @@ const Dashboard = () => {
                   <p className="text-muted-foreground">
                     No transfers match your search criteria.
                   </p>
+                  <Button variant="outline" onClick={clearFilters} className="mt-4">
+                    Clear Filters
+                  </Button>
                 </div>
               ) : (
                 <Card>
@@ -366,7 +545,10 @@ const Dashboard = () => {
                               Selling to: {transfer.counterparty || "TBD"}
                             </CardDescription>
                           </div>
-                          {getStatusBadge(transfer.status)}
+                          <div className="flex flex-col gap-2 items-end">
+                            {getStatusBadge(transfer.status)}
+                            {getProgressBadge(transfer)}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -449,7 +631,10 @@ const Dashboard = () => {
                               Buying from: {transfer.counterparty || "TBD"}
                             </CardDescription>
                           </div>
-                          {getStatusBadge(transfer.status)}
+                          <div className="flex flex-col gap-2 items-end">
+                            {getStatusBadge(transfer.status)}
+                            {getProgressBadge(transfer)}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>

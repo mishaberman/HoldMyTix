@@ -1,389 +1,85 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/*
+# Enhanced Email Notifications
+
+Improved email templates with better formatting and clear action links.
+*/
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
-  "Access-Control-Max-Age": "86400",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// Email templates
-const generateSellerInstructionsHTML = (
-  buyerName: string,
-  eventName: string,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">Secure Ticket Transfer Instructions</p>
-    </div>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #1f2937; margin-top: 0;">Hello!</h2>
-      <p style="color: #374151; line-height: 1.6;">Thank you for using HoldMyTix to securely transfer your ticket to <strong>${buyerName}</strong>.</p>
-    </div>
-    
-    <div style="margin-bottom: 30px;">
-      <h3 style="color: #1f2937;">📋 Transfer Instructions</h3>
-      <p style="color: #374151; margin-bottom: 15px;">Please follow these steps to complete the transfer:</p>
-      
-      <ol style="color: #374151; line-height: 1.8; padding-left: 20px;">
-        <li>Log in to your ticket provider account (Ticketmaster, StubHub, etc.)</li>
-        <li>Locate your ticket for <strong>${eventName}</strong></li>
-        <li>Select the transfer option</li>
-        <li>Enter the following email address: <strong>transfer@holdmytix.com</strong></li>
-        <li>Complete the transfer process</li>
-      </ol>
-    </div>
-    
-    <div style="background: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #065f46; margin: 0; font-weight: 500;">✅ Once we verify that the ticket has been transferred to our secure account, we will release the payment to you.</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">Questions? Contact us at <a href="mailto:support@holdmytix.com" style="color: #2563eb;">support@holdmytix.com</a></p>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Thank you,<br>The HoldMyTix Team</p>
-    </div>
-  </div>
-`;
+interface EmailRequest {
+  emailType: string;
+  data: any;
+}
 
-const generateBuyerInstructionsHTML = (
-  sellerName: string,
-  eventName: string,
-  amount: number,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">Secure Ticket Purchase Instructions</p>
-    </div>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #1f2937; margin-top: 0;">Hello!</h2>
-      <p style="color: #374151; line-height: 1.6;"><strong>${sellerName}</strong> has initiated a secure ticket transfer to you for <strong>${eventName}</strong> through HoldMyTix.</p>
-    </div>
-    
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h3 style="color: #1e40af; margin-top: 0;">💰 Payment Amount</h3>
-      <p style="color: #1e40af; font-size: 24px; font-weight: bold; margin: 0;">$${amount.toFixed(2)}</p>
-    </div>
-    
-    <div style="margin-bottom: 30px;">
-      <h3 style="color: #1f2937;">💳 Payment Instructions</h3>
-      <p style="color: #374151; margin-bottom: 15px;">To complete your purchase, please follow these steps:</p>
-      
-      <ol style="color: #374151; line-height: 1.8; padding-left: 20px;">
-        <li>Log in to your HoldMyTix account</li>
-        <li>Go to your Transaction Dashboard</li>
-        <li>Find the transaction for <strong>${eventName}</strong></li>
-        <li>Click on "Make Payment"</li>
-        <li>Complete the payment of <strong>$${amount.toFixed(2)}</strong></li>
-      </ol>
-    </div>
-    
-    <div style="background: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #065f46; margin: 0; font-weight: 500;">🔒 Once your payment is verified, we will ensure the ticket is transferred to you securely.</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">Questions? Contact us at <a href="mailto:support@holdmytix.com" style="color: #2563eb;">support@holdmytix.com</a></p>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Thank you,<br>The HoldMyTix Team</p>
-    </div>
-  </div>
-`;
-
-const generateAdminNotificationHTML = (
-  eventName: string,
-  sellerEmail: string,
-  buyerEmail: string,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #dc2626; margin: 0;">🚨 Admin Alert</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">New Ticket Transfer Initiated</p>
-    </div>
-    
-    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #991b1b; margin-top: 0;">Transfer Details</h2>
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Event:</td>
-          <td style="padding: 8px 0; color: #1f2937;"><strong>${eventName}</strong></td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Seller:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${sellerEmail}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Buyer:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${buyerEmail}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Time:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${new Date().toLocaleString()}</td>
-        </tr>
-      </table>
-    </div>
-    
-    <div style="background: #fffbeb; border: 1px solid #fed7aa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #92400e; margin: 0; font-weight: 500;">⚠️ Please monitor this transaction in the admin dashboard and ensure both parties complete their required actions.</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">HoldMyTix Admin System</p>
-    </div>
-  </div>
-`;
-
-const generateContactUsHTML = (
-  name: string,
-  email: string,
-  phone: string,
-  subject: string,
-  message: string,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">New Contact Form Submission</p>
-    </div>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #1f2937; margin-top: 0;">Contact Details</h2>
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500; width: 30%;">Name:</td>
-          <td style="padding: 8px 0; color: #1f2937;"><strong>${name}</strong></td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Email:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${email}</td>
-        </tr>
-        ${
-          phone
-            ? `<tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Phone:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${phone}</td>
-        </tr>`
-            : ""
-        }
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Subject:</td>
-          <td style="padding: 8px 0; color: #1f2937;"><strong>${subject}</strong></td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Time:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${new Date().toLocaleString()}</td>
-        </tr>
-      </table>
-    </div>
-    
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h3 style="color: #1e40af; margin-top: 0;">💬 Message</h3>
-      <p style="color: #1e40af; line-height: 1.6; white-space: pre-wrap;">${message}</p>
-    </div>
-    
-    <div style="background: #fffbeb; border: 1px solid #fed7aa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #92400e; margin: 0; font-weight: 500;">📧 Reply to: ${email}</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">HoldMyTix Contact System</p>
-    </div>
-  </div>
-`;
-
-const generateTicketTransferRequestHTML = (
-  eventName: string,
-  eventDate: string,
-  venue: string,
-  ticketDetails: string,
-  price: number,
-  sellerName: string,
-  sellerEmail: string,
-  buyerName: string,
-  buyerEmail: string,
-) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0;">🎫 HoldMyTix</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0;">New Ticket Transfer Request</p>
-    </div>
-    
-    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="color: #1f2937; margin-top: 0;">Event Information</h2>
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500; width: 30%;">Event:</td>
-          <td style="padding: 8px 0; color: #1f2937;"><strong>${eventName}</strong></td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Date:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${eventDate}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Venue:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${venue}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Ticket Details:</td>
-          <td style="padding: 8px 0; color: #1f2937;">${ticketDetails}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #374151; font-weight: 500;">Price:</td>
-          <td style="padding: 8px 0; color: #1f2937; font-weight: bold; font-size: 18px;">$${price.toFixed(2)}</td>
-        </tr>
-      </table>
-    </div>
-    
-    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-      <div style="flex: 1; background: #ecfdf5; border: 1px solid #d1fae5; padding: 15px; border-radius: 8px;">
-        <h3 style="color: #065f46; margin-top: 0; margin-bottom: 10px;">👤 Seller</h3>
-        <p style="color: #065f46; margin: 5px 0;"><strong>Name:</strong> ${sellerName}</p>
-        <p style="color: #065f46; margin: 5px 0;"><strong>Email:</strong> ${sellerEmail}</p>
-      </div>
-      
-      <div style="flex: 1; background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px;">
-        <h3 style="color: #1e40af; margin-top: 0; margin-bottom: 10px;">👤 Buyer</h3>
-        <p style="color: #1e40af; margin: 5px 0;"><strong>Name:</strong> ${buyerName}</p>
-        <p style="color: #1e40af; margin: 5px 0;"><strong>Email:</strong> ${buyerEmail}</p>
-      </div>
-    </div>
-    
-    <div style="background: #fffbeb; border: 1px solid #fed7aa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #92400e; margin: 0; font-weight: 500;">⚠️ Action Required: Please process this ticket transfer request and initiate the secure transaction process.</p>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 14px;">Request submitted at: ${new Date().toLocaleString()}</p>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">HoldMyTix Transfer System</p>
-    </div>
-  </div>
-`;
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
+    return new Response(null, {
       status: 200,
+      headers: corsHeaders,
     });
   }
 
   try {
-    console.log("Received request method:", req.method);
-    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+    const { emailType, data }: EmailRequest = await req.json();
 
-    const requestBody = await req.text();
-    console.log("Request body:", requestBody);
-
-    let parsedData;
-    try {
-      parsedData = JSON.parse(requestBody);
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      throw new Error("Invalid JSON in request body");
-    }
-
-    const { emailType, data } = parsedData;
-
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY not found in environment variables");
-    }
-
-    let emailData;
+    let emailContent;
+    let subject;
+    let to;
 
     switch (emailType) {
-      case "seller_instructions":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: data.sellerEmail,
-          subject: `HoldMyTix: Instructions for transferring your ${data.eventName} ticket`,
-          html: generateSellerInstructionsHTML(data.buyerName, data.eventName),
-        };
+      case 'ticket_transfer_request':
+        emailContent = generateTransferRequestEmail(data);
+        subject = `🎫 New Ticket Transfer Request - ${data.eventName}`;
+        to = 'info@holdmytix.com';
         break;
-
-      case "buyer_instructions":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: data.buyerEmail,
-          subject: `HoldMyTix: Payment instructions for ${data.eventName} ticket`,
-          html: generateBuyerInstructionsHTML(
-            data.sellerName,
-            data.eventName,
-            data.amount,
-          ),
-        };
+      
+      case 'seller_instructions':
+        emailContent = generateSellerInstructionsEmail(data);
+        subject = `🎫 Action Required: Transfer Your Tickets - ${data.eventName}`;
+        to = data.sellerEmail;
         break;
-
-      case "admin_notification":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: "info@holdmytix.com",
-          subject: `🎫 New HoldMyTix Transfer: ${data.eventName}`,
-          html: generateAdminNotificationHTML(
-            data.eventName,
-            data.sellerEmail,
-            data.buyerEmail,
-          ),
-        };
+      
+      case 'buyer_instructions':
+        emailContent = generateBuyerInstructionsEmail(data);
+        subject = `🎫 Action Required: Complete Your Payment - ${data.eventName}`;
+        to = data.buyerEmail;
         break;
-
-      case "ticket_transfer_request":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: "info@holdmytix.com",
-          subject: `🎫 Ticket Transfer Request: ${data.eventName}`,
-          html: generateTicketTransferRequestHTML(
-            data.eventName,
-            data.eventDate,
-            data.venue,
-            data.ticketDetails,
-            data.price,
-            data.sellerName,
-            data.sellerEmail,
-            data.buyerName,
-            data.buyerEmail,
-          ),
-        };
+      
+      case 'admin_notification':
+        emailContent = generateAdminNotificationEmail(data);
+        subject = `🎫 New Transfer Initiated - ${data.eventName}`;
+        to = 'info@holdmytix.com';
         break;
-
-      case "contact_us":
-        emailData = {
-          from: "info@holdmytix.com",
-          to: "info@holdmytix.com",
-          subject: `📧 Contact Form: ${data.subject}`,
-          html: generateContactUsHTML(
-            data.name,
-            data.email,
-            data.phone,
-            data.subject,
-            data.message,
-          ),
-        };
-        break;
-
+      
       default:
         throw new Error(`Unknown email type: ${emailType}`);
     }
 
-    // Send email using Resend API
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
+    // Send email using Resend
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(emailData),
+      body: JSON.stringify({
+        from: 'HoldMyTix <noreply@holdmytix.com>',
+        to: [to],
+        subject: subject,
+        html: emailContent,
+      }),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Failed to send email");
+    if (!resendResponse.ok) {
+      const errorText = await resendResponse.text();
+      throw new Error(`Email sending failed: ${errorText}`);
     }
+
+    const result = await resendResponse.json();
 
     return new Response(
       JSON.stringify({
@@ -391,21 +87,298 @@ Deno.serve(async (req) => {
         messageId: result.id,
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error('Email sending error:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
+      JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-      },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
 });
+
+function generateTransferRequestEmail(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Ticket Transfer Request</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007B8A; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+        .event-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007B8A; }
+        .action-button { display: inline-block; background: #007B8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+        .status-badge { background: #FFA500; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎫 New Ticket Transfer Request</h1>
+          <p>A new secure ticket transfer has been initiated</p>
+        </div>
+        
+        <div class="content">
+          <p><strong>👨‍💼 Admin Action Required</strong></p>
+          <p>A new ticket transfer request has been submitted and requires your attention.</p>
+          
+          <div class="event-details">
+            <h3>📅 Event Details</h3>
+            <p><strong>Event:</strong> ${data.eventName}</p>
+            <p><strong>Date:</strong> ${data.eventDate}</p>
+            <p><strong>Venue:</strong> ${data.venue}</p>
+            <p><strong>Tickets:</strong> ${data.ticketDetails}</p>
+            <p><strong>Total Price:</strong> $${data.price.toFixed(2)}</p>
+          </div>
+          
+          <div class="event-details">
+            <h3>👥 Parties Involved</h3>
+            <p><strong>Seller:</strong> ${data.sellerName} (${data.sellerEmail})</p>
+            <p><strong>Buyer:</strong> ${data.buyerName} (${data.buyerEmail})</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <span class="status-badge">⏳ PENDING ADMIN REVIEW</span>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="https://www.holdmytix.com/admin" class="action-button">
+              🔧 Review in Admin Panel
+            </a>
+          </div>
+          
+          <div class="footer">
+            <p>This is an automated notification from HoldMyTix</p>
+            <p>Secure ticket transfers made simple</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateSellerInstructionsEmail(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Transfer Your Tickets - Action Required</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007B8A; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+        .event-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007B8A; }
+        .action-button { display: inline-block; background: #007B8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+        .urgent { background: #FF6B6B; color: white; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .steps { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .step { margin: 15px 0; padding: 10px; border-left: 3px solid #007B8A; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎫 Action Required: Transfer Your Tickets</h1>
+          <p>Your buyer is ready to complete the purchase</p>
+        </div>
+        
+        <div class="content">
+          <div class="urgent">
+            <h3>⚡ URGENT: Transfer Required</h3>
+            <p>Please transfer your tickets to complete this secure transaction</p>
+          </div>
+          
+          <p>Hello <strong>${data.sellerName || 'Seller'}</strong>,</p>
+          <p>Great news! ${data.buyerName} is ready to purchase your tickets for <strong>${data.eventName}</strong>.</p>
+          
+          <div class="event-details">
+            <h3>📅 Event Details</h3>
+            <p><strong>Event:</strong> ${data.eventName}</p>
+            <p><strong>Buyer:</strong> ${data.buyerName}</p>
+            <p><strong>Amount:</strong> $${data.amount?.toFixed(2) || 'TBD'}</p>
+          </div>
+          
+          <div class="steps">
+            <h3>📋 Next Steps for You:</h3>
+            <div class="step">
+              <strong>1.</strong> Log into your Ticketmaster account
+            </div>
+            <div class="step">
+              <strong>2.</strong> Transfer tickets to: <strong>tickets@holdmytix.com</strong>
+            </div>
+            <div class="step">
+              <strong>3.</strong> We'll verify and release payment to you
+            </div>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="https://www.holdmytix.com/dashboard" class="action-button">
+              📊 View Transfer Status
+            </a>
+          </div>
+          
+          <div style="background: #E8F5E8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>🔒 Your Protection:</strong></p>
+            <p>• Payment is held securely until tickets are verified<br>
+            • You'll receive payment once transfer is confirmed<br>
+            • Full transaction protection through HoldMyTix</p>
+          </div>
+          
+          <div class="footer">
+            <p>Questions? Reply to this email or contact support@holdmytix.com</p>
+            <p>HoldMyTix - Secure ticket transfers made simple</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateBuyerInstructionsEmail(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Complete Your Payment - Action Required</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007B8A; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+        .event-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007B8A; }
+        .action-button { display: inline-block; background: #007B8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+        .urgent { background: #FF6B6B; color: white; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .steps { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .step { margin: 15px 0; padding: 10px; border-left: 3px solid #007B8A; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎫 Action Required: Complete Your Payment</h1>
+          <p>Your tickets are being prepared for transfer</p>
+        </div>
+        
+        <div class="content">
+          <div class="urgent">
+            <h3>⚡ URGENT: Payment Required</h3>
+            <p>Please send payment to secure your tickets</p>
+          </div>
+          
+          <p>Hello <strong>${data.buyerName || 'Buyer'}</strong>,</p>
+          <p>Excellent! ${data.sellerName} is ready to transfer your tickets for <strong>${data.eventName}</strong>.</p>
+          
+          <div class="event-details">
+            <h3>📅 Event Details</h3>
+            <p><strong>Event:</strong> ${data.eventName}</p>
+            <p><strong>Seller:</strong> ${data.sellerName}</p>
+            <p><strong>Total Amount:</strong> $${data.amount?.toFixed(2) || 'TBD'}</p>
+          </div>
+          
+          <div class="steps">
+            <h3>💳 Payment Instructions:</h3>
+            <div class="step">
+              <strong>1.</strong> Send $${data.amount?.toFixed(2) || 'TBD'} via your preferred payment method
+            </div>
+            <div class="step">
+              <strong>2.</strong> Include reference: "HoldMyTix - ${data.eventName}"
+            </div>
+            <div class="step">
+              <strong>3.</strong> We'll verify payment and release tickets to you
+            </div>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="https://www.holdmytix.com/dashboard" class="action-button">
+              📊 View Transfer Status
+            </a>
+          </div>
+          
+          <div style="background: #E8F5E8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>🔒 Your Protection:</strong></p>
+            <p>• Tickets are verified before you pay<br>
+            • Full refund if tickets aren't delivered<br>
+            • Secure transaction protection through HoldMyTix</p>
+          </div>
+          
+          <div class="footer">
+            <p>Questions? Reply to this email or contact support@holdmytix.com</p>
+            <p>HoldMyTix - Secure ticket transfers made simple</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function generateAdminNotificationEmail(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Transfer Initiated</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007B8A; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+        .event-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007B8A; }
+        .action-button { display: inline-block; background: #007B8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎫 New Transfer Initiated</h1>
+          <p>Monitor and manage this transaction</p>
+        </div>
+        
+        <div class="content">
+          <p><strong>Admin Notification</strong></p>
+          <p>A new ticket transfer has been initiated between:</p>
+          
+          <div class="event-details">
+            <h3>📋 Transfer Summary</h3>
+            <p><strong>Event:</strong> ${data.eventName}</p>
+            <p><strong>Seller:</strong> ${data.sellerEmail}</p>
+            <p><strong>Buyer:</strong> ${data.buyerEmail}</p>
+            <p><strong>Status:</strong> Initiated</p>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="https://www.holdmytix.com/admin" class="action-button">
+              🔧 Manage in Admin Panel
+            </a>
+          </div>
+          
+          <div class="footer">
+            <p>HoldMyTix Admin Notification System</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}

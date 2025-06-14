@@ -26,7 +26,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter, //Imported CardFooter
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Select,
@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { generateTransferAgreement } from "@/lib/docusign";
+import { createDocuSignEnvelope } from "@/lib/docusign-api";
 import {
   sendSellerInstructions,
   sendBuyerInstructions,
@@ -67,8 +67,7 @@ const SingleTicketTransfer = () => {
   const [activeTab, setActiveTab] = useState("seller");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [dateError, setDateError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [eventSearchOpen, setEventSearchOpen] = useState(false);
   const [eventSearchResults, setEventSearchResults] = useState([]);
   const [searchingEvents, setSearchingEvents] = useState(false);
@@ -89,7 +88,7 @@ const SingleTicketTransfer = () => {
       const { data, error } = await getDistinctTicketmasterEvents();
 
       if (!error && data) {
-        setInitialEvents(data.slice(0, 10)); // Show first 10 events
+        setInitialEvents(data.slice(0, 10));
         setEventSearchResults(data.slice(0, 10));
       }
     } catch (error) {
@@ -97,7 +96,7 @@ const SingleTicketTransfer = () => {
     }
   };
 
-  // Form state - load from localStorage if available
+  // Enhanced form state with validation
   const [formData, setFormData] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -110,30 +109,22 @@ const SingleTicketTransfer = () => {
       }
     }
 
-    // Default placeholder data for easy testing
     return {
-      // Event details
-      eventName: "Taylor Swift - The Eras Tour",
-      eventDate: "2024-08-15",
-      eventTime: "19:00",
-      venue: "SoFi Stadium, Los Angeles",
-      ticketCount: "2",
-      ticketSection: "134",
-      ticketRow: "G",
-      ticketSeat: "12-13",
+      eventName: "",
+      eventDate: "",
+      eventTime: "",
+      venue: "",
+      ticketCount: "1",
+      ticketSection: "",
+      ticketRow: "",
+      ticketSeat: "",
       ticketProvider: "ticketmaster",
-      ticketNotes: "Mobile transfer available, great view of the stage!",
-
-      // Price details
-      price: "350",
-
-      // Seller details (when user is buyer)
-      sellerName: "John Doe",
-      sellerEmail: "john.doe@example.com",
-
-      // Buyer details (when user is seller)
-      buyerName: "Jane Smith",
-      buyerEmail: "jane.smith@example.com",
+      ticketNotes: "",
+      price: "",
+      sellerName: "",
+      sellerEmail: "",
+      buyerName: "",
+      buyerEmail: "",
     };
   });
 
@@ -148,6 +139,84 @@ const SingleTicketTransfer = () => {
     }
   }, [formData]);
 
+  // Enhanced validation function
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Event validation
+    if (!formData.eventName.trim()) {
+      newErrors.eventName = "Event name is required";
+    }
+    if (!formData.venue.trim()) {
+      newErrors.venue = "Venue is required";
+    }
+    if (!formData.eventDate) {
+      newErrors.eventDate = "Event date is required";
+    }
+    if (!formData.eventTime) {
+      newErrors.eventTime = "Event time is required";
+    }
+
+    // Date validation
+    if (formData.eventDate && formData.eventTime) {
+      try {
+        const timeWithSeconds = formData.eventTime.includes(":") &&
+          formData.eventTime.split(":").length === 2
+          ? `${formData.eventTime}:00`
+          : formData.eventTime;
+        const dateTimeString = `${formData.eventDate}T${timeWithSeconds}`;
+        const eventDateTime = new Date(dateTimeString);
+        
+        if (isNaN(eventDateTime.getTime())) {
+          newErrors.eventDate = "Invalid date or time format";
+        } else {
+          const now = new Date();
+          const bufferTime = 30 * 60 * 1000; // 30 minutes buffer
+          if (eventDateTime.getTime() <= now.getTime() - bufferTime) {
+            newErrors.eventDate = "Event date must be in the future";
+          }
+        }
+      } catch (error) {
+        newErrors.eventDate = "Invalid date or time format";
+      }
+    }
+
+    // Ticket validation
+    if (!formData.ticketCount || parseInt(formData.ticketCount) < 1) {
+      newErrors.ticketCount = "At least 1 ticket is required";
+    }
+
+    // Price validation
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      newErrors.price = "Valid price is required";
+    }
+
+    // Party validation based on role
+    const isSeller = activeTab === "seller";
+    if (isSeller) {
+      if (!formData.buyerName.trim()) {
+        newErrors.buyerName = "Buyer name is required";
+      }
+      if (!formData.buyerEmail.trim()) {
+        newErrors.buyerEmail = "Buyer email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.buyerEmail)) {
+        newErrors.buyerEmail = "Valid buyer email is required";
+      }
+    } else {
+      if (!formData.sellerName.trim()) {
+        newErrors.sellerName = "Seller name is required";
+      }
+      if (!formData.sellerEmail.trim()) {
+        newErrors.sellerEmail = "Seller email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.sellerEmail)) {
+        newErrors.sellerEmail = "Valid seller email is required";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -155,10 +224,20 @@ const SingleTicketTransfer = () => {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error when user makes selection
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
   };
 
   const searchEvents = async (query: string) => {
@@ -195,68 +274,39 @@ const SingleTicketTransfer = () => {
       eventTime: event.time || prev.eventTime,
     }));
     setEventSearchOpen(false);
+    
+    // Clear related errors
+    setErrors(prev => ({
+      ...prev,
+      eventName: "",
+      venue: ""
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      // Scroll to first error
+      const firstErrorField = document.querySelector('.border-red-500');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     setIsSubmitting(true);
-    setError(null);
-    setDateError(null);
 
     try {
-      // Validate required fields
-      if (!formData.eventName || !formData.eventDate || !formData.eventTime) {
-        throw new Error("Please fill in all required event details");
-      }
-
-      if (!formData.venue || !formData.ticketCount || !formData.price) {
-        throw new Error("Please fill in all required ticket and price details");
-      }
-
-      // Validate date format and check if it's in the future
-      let testDate;
-      try {
-        // Ensure we have both date and time
-        if (!formData.eventDate || !formData.eventTime) {
-          setDateError("Event date and time are required");
-          throw new Error("Event date and time are required");
-        }
-
-        // Create date string in ISO format
-        // Handle both HH:MM and HH:MM:SS time formats
-        const timeWithSeconds =
-          formData.eventTime.includes(":") &&
-          formData.eventTime.split(":").length === 2
-            ? `${formData.eventTime}:00`
-            : formData.eventTime;
-        const dateTimeString = `${formData.eventDate}T${timeWithSeconds}`;
-        testDate = new Date(dateTimeString);
-
-        // Check if the date is valid
-        if (isNaN(testDate.getTime())) {
-          setDateError("Please enter a valid date and time");
-          throw new Error("Please enter a valid date and time");
-        }
-
-        // Check if event date is in the future (with some buffer for timezone differences)
-        const now = new Date();
-        const bufferTime = 30 * 60 * 1000; // 30 minutes buffer
-        if (testDate.getTime() <= now.getTime() - bufferTime) {
-          setDateError(
-            "Event date must be in the future. Please select a future date and time.",
-          );
-          throw new Error(
-            "Event date must be in the future. Please select a future date and time.",
-          );
-        }
-      } catch (error) {
-        if (!dateError) {
-          setDateError("Invalid event date or time format");
-        }
-        throw error;
-      }
-      // Determine if user is seller or buyer based on active tab
       const isSeller = activeTab === "seller";
+      
+      // Create date string in ISO format
+      const timeWithSeconds = formData.eventTime.includes(":") &&
+        formData.eventTime.split(":").length === 2
+        ? `${formData.eventTime}:00`
+        : formData.eventTime;
+      const dateTimeString = `${formData.eventDate}T${timeWithSeconds}`;
+      const eventDateTime = new Date(dateTimeString);
 
       // Import API functions
       const {
@@ -265,19 +315,15 @@ const SingleTicketTransfer = () => {
         createEmailNotification,
       } = await import("@/lib/api");
 
-      // Prepare data for transaction with ALL form fields
+      // Prepare transaction data
       const transactionData = {
         contract_id: `TIX-${Math.floor(Math.random() * 100000)}`,
         seller_id: isSeller ? user?.sub : null,
         buyer_id: isSeller ? null : user?.sub,
-
-        // Event information
         event_name: formData.eventName,
-        event_date: testDate.toISOString(),
+        event_date: eventDateTime.toISOString(),
         event_time: formData.eventTime,
         venue: formData.venue,
-
-        // Ticket information
         ticket_quantity: parseInt(formData.ticketCount),
         ticket_section: formData.ticketSection,
         ticket_row: formData.ticketRow,
@@ -287,30 +333,21 @@ const SingleTicketTransfer = () => {
           "General Admission",
         ticket_provider: formData.ticketProvider,
         ticket_notes: formData.ticketNotes,
-
-        // Price and payment
         price: parseFloat(formData.price) * parseInt(formData.ticketCount),
         payment_method: isSeller ? "TBD" : "Venmo",
-
-        // Status tracking
         status: "pending",
         payment_verified: false,
         tickets_verified: false,
         time_remaining: 60,
         expiration_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-
-        // Seller information
         seller_name: isSeller ? user?.name || "" : formData.sellerName,
         seller_email: isSeller ? user?.email || "" : formData.sellerEmail,
-
-        // Buyer information
         buyer_name: isSeller ? formData.buyerName : user?.name || "",
         buyer_email: isSeller ? formData.buyerEmail : user?.email || "",
       };
 
-      // Ensure current user exists in users table first
+      // Ensure current user exists in users table
       if (user?.sub) {
-        console.log("Ensuring user exists in database:", user.sub);
         const { error: upsertUserError } = await supabase.from("users").upsert(
           {
             id: user.sub,
@@ -318,9 +355,7 @@ const SingleTicketTransfer = () => {
             full_name: user.name || "Unknown User",
             updated_at: new Date().toISOString(),
           },
-          {
-            onConflict: "id",
-          },
+          { onConflict: "id" }
         );
 
         if (upsertUserError) {
@@ -335,89 +370,55 @@ const SingleTicketTransfer = () => {
 
       if (transactionError) {
         throw new Error(
-          `Failed to create transaction: ${transactionError.message || "Unknown error"}`,
+          `Failed to create transaction: ${transactionError.message || "Unknown error"}`
         );
       }
 
-      // Prepare data for DocuSign agreement
-      const agreementData = {
+      // Create DocuSign envelope
+      const docusignData = {
+        transferRequestDate: new Date().toISOString().split('T')[0],
+        eventName: formData.eventName,
+        eventDate: formData.eventDate,
+        seatInfo: transactionData.seat_details,
+        totalPrice: parseFloat(formData.price) * parseInt(formData.ticketCount),
         sellerName: isSeller ? user?.name || "" : formData.sellerName,
         sellerEmail: isSeller ? user?.email || "" : formData.sellerEmail,
         buyerName: isSeller ? formData.buyerName : user?.name || "",
         buyerEmail: isSeller ? formData.buyerEmail : user?.email || "",
-        eventName: formData.eventName,
-        eventDate: formData.eventDate,
-        ticketCount: parseInt(formData.ticketCount),
-        ticketPrice: parseFloat(formData.price),
-        totalAmount:
-          parseInt(formData.ticketCount) * parseFloat(formData.price),
+        transferId: transaction.id,
       };
 
-      // Generate DocuSign agreement using the mock function
-      const agreementResult = await generateTransferAgreement(agreementData);
-
-      if (!agreementResult.success) {
-        throw new Error("Failed to generate transfer agreement");
+      const docusignResult = await createDocuSignEnvelope(docusignData);
+      if (!docusignResult.success) {
+        console.warn("DocuSign envelope creation failed:", docusignResult.error);
+        // Don't fail the entire process if DocuSign fails
       }
 
-      // Store DocuSign agreement
-      const docusignData = {
-        transaction_id: transaction.id,
-        envelope_id: agreementResult.data.envelopeId,
-        status: "sent",
-        document_url: agreementResult.data.documentUrl,
-        seller_status: "sent",
-        buyer_status: "sent",
-      };
-
-      //  await createDocuSignAgreement(docusignData);
-
-      // Send emails using the serverless functions
+      // Send emails
       if (isSeller) {
-        // Send instructions to buyer
-        const buyerEmailResult = await sendBuyerInstructions(
+        await sendBuyerInstructions(
           formData.buyerEmail,
           user?.name || "Seller",
           formData.eventName,
-          parseFloat(formData.price),
+          parseFloat(formData.price) * parseInt(formData.ticketCount)
         );
-
-        // Store email notification
-        await createEmailNotification({
-          transaction_id: transaction.id,
-          recipient_id: null,
-          email_type: "buyer_instructions",
-          status: "sent",
-          message_id: buyerEmailResult.messageId,
-        });
       } else {
-        // Send instructions to seller
-        const sellerEmailResult = await sendSellerInstructions(
+        await sendSellerInstructions(
           formData.sellerEmail,
           user?.name || "Buyer",
-          formData.eventName,
+          formData.eventName
         );
-
-        // Store email notification
-        await createEmailNotification({
-          transaction_id: transaction.id,
-          recipient_id: null,
-          email_type: "seller_instructions",
-          status: "sent",
-          message_id: sellerEmailResult.messageId,
-        });
       }
 
       // Send admin notification
       await sendAdminNotification(
         formData.eventName,
         isSeller ? user?.email || "" : formData.sellerEmail,
-        isSeller ? formData.buyerEmail : user?.email || "",
+        isSeller ? formData.buyerEmail : user?.email || ""
       );
 
-      // Send detailed ticket transfer request to info@holdmytix.com
-      console.log("About to send ticket transfer request email");
-      const emailResult = await sendTicketTransferRequest(
+      // Send detailed transfer request email
+      await sendTicketTransferRequest(
         formData.eventName,
         `${formData.eventDate} at ${formData.eventTime}`,
         formData.venue,
@@ -426,75 +427,21 @@ const SingleTicketTransfer = () => {
         isSeller ? user?.name || "" : formData.sellerName,
         isSeller ? user?.email || "" : formData.sellerEmail,
         isSeller ? formData.buyerName : user?.name || "",
-        isSeller ? formData.buyerEmail : user?.email || "",
+        isSeller ? formData.buyerEmail : user?.email || ""
       );
 
-      console.log("Email result:", emailResult);
-
-      if (!emailResult.success) {
-        console.warn("Failed to send email notification:", emailResult.error);
-        // Don't fail the entire process if email fails
-      }
-      // Save to database
-      console.log("Form data:", formData);
-
-      const transferResult = await createTicketTransfer({
-        buyer_name: formData.buyerName,
-        buyer_email: formData.buyerEmail,
-        seller_name: formData.sellerName,
-        seller_email: formData.sellerEmail,
-        event_name: formData.eventName,
-        event_date: formData.eventDate,
-        venue: formData.venue,
-        ticket_details: formData.ticketNotes,
-        price: parseFloat(formData.price),
-        payment_method: "Venmo", // TODO: Fix this
-        status: "pending",
-      });
-
-      if (transferResult.error) {
-        console.error(
-          "Failed to save transfer to database:",
-          transferResult.error,
-        );
-        // toast({
-        //   title: "Database Error",
-        //   description: "Transfer was initiated but failed to save to database. Please contact support.",
-        //   variant: "destructive",
-        // })
-      } else {
-        console.log("Transfer saved to database:", transferResult.data);
-      }
-
-      // Track purchase initiation
+      // Track events
       trackInitiateCheckout(
         parseFloat(formData.price) * parseInt(formData.ticketCount),
         "USD",
-        userData,
+        userData
       );
 
-      // Track completed purchase
-      // Track ticket transfer initiated event
-      const ticketPrice =
-        parseFloat(formData.price) * parseInt(formData.ticketCount);
-      const sellerName = isSeller ? user?.name || "" : formData.sellerName;
-      const buyerName = isSeller ? formData.buyerName : user?.name || "";
-      const paymentMethod = isSeller ? "TBD" : "Venmo";
-
-      if (typeof fbq !== "undefined") {
-        fbq("trackCustom", "TicketTransferInitiated", {
-          value: ticketPrice || 0,
-          currency: "USD",
-          content_name: `${sellerName} -> ${buyerName} Ticket Transfer`,
-          content_category: "ticket_transfer",
-          seller_name: sellerName,
-          buyer_name: buyerName,
-          ticket_price: ticketPrice,
-          payment_method: paymentMethod,
-        });
+      // Clear form data from localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("ticketTransferForm");
       }
 
-      // Show success message and redirect after delay
       setSuccess(true);
       window.scrollTo(0, 0);
       setTimeout(() => {
@@ -502,12 +449,9 @@ const SingleTicketTransfer = () => {
       }, 3000);
     } catch (err) {
       console.error("Error creating ticket transfer:", err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to create ticket transfer. Please try again.");
-      }
-      // Scroll to top to show error
+      setErrors({
+        submit: err instanceof Error ? err.message : "Failed to create ticket transfer. Please try again."
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);
@@ -515,19 +459,10 @@ const SingleTicketTransfer = () => {
   };
 
   useEffect(() => {
-    // Track page view
     if (typeof fbq !== "undefined") {
       fbq("track", "PageView", {
         content_name: "Single Ticket Transfer",
         content_category: "ticket_transfer",
-      });
-
-      fbq("track", "ViewContent", {
-        content_name: "Single Ticket Transfer",
-        content_category: "page",
-        custom_data: {
-          page: "TicketTransferPage",
-        },
       });
     }
   }, []);
@@ -593,24 +528,12 @@ const SingleTicketTransfer = () => {
             </p>
           </div>
 
-          {error && (
+          {errors.submit && (
             <Alert className="mb-6 bg-red-50 border-red-200">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertTitle className="text-red-800">Error</AlertTitle>
               <AlertDescription className="text-red-700">
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {dateError && (
-            <Alert className="mb-6 bg-red-50 border-red-200">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertTitle className="text-red-800">
-                Date Validation Error
-              </AlertTitle>
-              <AlertDescription className="text-red-700">
-                {dateError}
+                {errors.submit}
               </AlertDescription>
             </Alert>
           )}
@@ -661,8 +584,14 @@ const SingleTicketTransfer = () => {
                               value={formData.eventName}
                               onChange={handleChange}
                               placeholder="Or type event name manually"
-                              className="w-full"
+                              className={cn(
+                                "w-full",
+                                errors.eventName && "border-red-500 focus:border-red-500"
+                              )}
                             />
+                            {errors.eventName && (
+                              <p className="text-xs text-red-600">{errors.eventName}</p>
+                            )}
                             <p className="text-xs text-muted-foreground">
                               💡 Click the search button above to find
                               Ticketmaster events, or type your event name
@@ -679,65 +608,52 @@ const SingleTicketTransfer = () => {
                             value={formData.venue}
                             onChange={handleChange}
                             placeholder="e.g. SoFi Stadium, Los Angeles"
+                            className={cn(
+                              errors.venue && "border-red-500 focus:border-red-500"
+                            )}
                             required
                           />
+                          {errors.venue && (
+                            <p className="text-xs text-red-600">{errors.venue}</p>
+                          )}
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label
-                            htmlFor="eventDate"
-                            className={dateError ? "text-red-600" : ""}
-                          >
-                            Event Date *
-                          </Label>
+                          <Label htmlFor="eventDate">Event Date *</Label>
                           <Input
                             id="eventDate"
                             name="eventDate"
                             value={formData.eventDate}
-                            onChange={(e) => {
-                              handleChange(e);
-                              if (dateError) setDateError(null);
-                            }}
+                            onChange={handleChange}
                             type="date"
+                            className={cn(
+                              errors.eventDate && "border-red-500 focus:border-red-500"
+                            )}
                             required
-                            className={
-                              dateError
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : ""
-                            }
                           />
-                          {dateError && (
-                            <p className="text-xs text-red-600 mt-1">
-                              {dateError}
-                            </p>
+                          {errors.eventDate && (
+                            <p className="text-xs text-red-600">{errors.eventDate}</p>
                           )}
                         </div>
 
                         <div className="space-y-2">
-                          <Label
-                            htmlFor="eventTime"
-                            className={dateError ? "text-red-600" : ""}
-                          >
-                            Event Time *
-                          </Label>
+                          <Label htmlFor="eventTime">Event Time *</Label>
                           <Input
                             id="eventTime"
                             name="eventTime"
                             value={formData.eventTime}
-                            onChange={(e) => {
-                              handleChange(e);
-                              if (dateError) setDateError(null);
-                            }}
+                            onChange={handleChange}
                             type="time"
+                            className={cn(
+                              errors.eventTime && "border-red-500 focus:border-red-500"
+                            )}
                             required
-                            className={
-                              dateError
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                : ""
-                            }
                           />
+                          {errors.eventTime && (
+                            <p className="text-xs text-red-600">{errors.eventTime}</p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -759,7 +675,9 @@ const SingleTicketTransfer = () => {
                               handleSelectChange("ticketCount", value)
                             }
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className={cn(
+                              errors.ticketCount && "border-red-500"
+                            )}>
                               <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent>
@@ -771,6 +689,9 @@ const SingleTicketTransfer = () => {
                               <SelectItem value="6">6</SelectItem>
                             </SelectContent>
                           </Select>
+                          {errors.ticketCount && (
+                            <p className="text-xs text-red-600">{errors.ticketCount}</p>
+                          )}
                         </div>
 
                         <div className="space-y-2">
@@ -869,11 +790,17 @@ const SingleTicketTransfer = () => {
                             type="number"
                             min="0"
                             step="0.01"
-                            className="pl-7"
+                            className={cn(
+                              "pl-7",
+                              errors.price && "border-red-500 focus:border-red-500"
+                            )}
                             placeholder="0.00"
                             required
                           />
                         </div>
+                        {errors.price && (
+                          <p className="text-xs text-red-600">{errors.price}</p>
+                        )}
                       </div>
                     </div>
 
@@ -893,8 +820,14 @@ const SingleTicketTransfer = () => {
                               value={formData.buyerName}
                               onChange={handleChange}
                               placeholder="Full name"
+                              className={cn(
+                                errors.buyerName && "border-red-500 focus:border-red-500"
+                              )}
                               required
                             />
+                            {errors.buyerName && (
+                              <p className="text-xs text-red-600">{errors.buyerName}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -906,8 +839,14 @@ const SingleTicketTransfer = () => {
                               onChange={handleChange}
                               type="email"
                               placeholder="email@example.com"
+                              className={cn(
+                                errors.buyerEmail && "border-red-500 focus:border-red-500"
+                              )}
                               required
                             />
+                            {errors.buyerEmail && (
+                              <p className="text-xs text-red-600">{errors.buyerEmail}</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -926,8 +865,14 @@ const SingleTicketTransfer = () => {
                               value={formData.sellerName}
                               onChange={handleChange}
                               placeholder="Full name"
+                              className={cn(
+                                errors.sellerName && "border-red-500 focus:border-red-500"
+                              )}
                               required
                             />
+                            {errors.sellerName && (
+                              <p className="text-xs text-red-600">{errors.sellerName}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -941,8 +886,14 @@ const SingleTicketTransfer = () => {
                               onChange={handleChange}
                               type="email"
                               placeholder="email@example.com"
+                              className={cn(
+                                errors.sellerEmail && "border-red-500 focus:border-red-500"
+                              )}
                               required
                             />
+                            {errors.sellerEmail && (
+                              <p className="text-xs text-red-600">{errors.sellerEmail}</p>
+                            )}
                           </div>
                         </div>
                       </div>

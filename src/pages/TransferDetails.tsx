@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -12,12 +11,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  ProgressTracker,
-  ProgressStep,
-} from "@/components/ui/progress-tracker";
+import { StatusTracker, StatusStep } from "@/components/ui/status-tracker";
 import {
   Calendar,
   MapPin,
@@ -35,10 +30,6 @@ import { supabase } from "@/lib/supabase";
 import {
   Loader2,
   ArrowLeft,
-  Calendar,
-  MapPin,
-  User,
-  DollarSign,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -72,7 +63,7 @@ const TransferDetails = () => {
       if (transferError) throw transferError;
       setTransfer(transferData);
 
-      // Fetch related logs (email notifications, docusign agreements, etc.)
+      // Fetch related logs
       const { data: emailLogs, error: emailError } = await supabase
         .from("email_notifications")
         .select("*")
@@ -85,7 +76,7 @@ const TransferDetails = () => {
         .eq("transaction_id", transferId)
         .order("created_at", { ascending: false });
 
-      // Combine logs with more detailed information
+      // Combine logs
       const combinedLogs = [
         ...(emailLogs || []).map((log) => ({
           ...log,
@@ -121,7 +112,6 @@ const TransferDetails = () => {
             ticketQuantity: transferData.ticket_quantity,
           },
         },
-        // Add status change logs if admin notes exist
         ...(transferData.admin_notes
           ? [
               {
@@ -220,6 +210,87 @@ const TransferDetails = () => {
     }
   };
 
+  // Generate status tracker steps
+  const generateStatusSteps = (transfer: any): StatusStep[] => {
+    if (!transfer) return [];
+
+    const steps: StatusStep[] = [
+      {
+        id: "initiated",
+        title: "Transfer Request Initiated",
+        description: "Secure transfer request has been created",
+        status: "completed",
+        completedAt: transfer.created_at,
+        details: `Contract ID: ${transfer.contract_id}`,
+      },
+      {
+        id: "details_provided",
+        title: "Payment and Ticketmaster Account Details Provided",
+        description: "Both parties have provided necessary account information",
+        status: transfer.seller_ticketmaster_email && transfer.buyer_ticketmaster_email && transfer.payment_method_details
+          ? "completed"
+          : transfer.seller_ticketmaster_email || transfer.buyer_ticketmaster_email || transfer.payment_method_details
+          ? "in-progress"
+          : "pending",
+        details: transfer.payment_method_details || "Awaiting payment method details",
+      },
+      {
+        id: "payment_received",
+        title: "Payment Received",
+        description: "HoldMyTix has verified payment from buyer",
+        status: transfer.payment_received ? "completed" : "pending",
+        completedAt: transfer.payment_received ? transfer.updated_at : undefined,
+      },
+      {
+        id: "ticket_received",
+        title: "Ticket Received",
+        description: "Tickets have been transferred to HoldMyTix holding account",
+        status: transfer.ticket_received ? "completed" : "pending",
+        completedAt: transfer.ticket_received ? transfer.updated_at : undefined,
+      },
+      {
+        id: "payment_sent",
+        title: "Payment Sent",
+        description: "Payment has been released to seller",
+        status: transfer.payment_sent ? "completed" : "pending",
+        completedAt: transfer.payment_sent ? transfer.updated_at : undefined,
+      },
+      {
+        id: "ticket_sent",
+        title: "Ticket Sent",
+        description: "Tickets have been transferred to buyer",
+        status: transfer.ticket_sent ? "completed" : "pending",
+        completedAt: transfer.ticket_sent ? transfer.updated_at : undefined,
+      },
+      {
+        id: "docusign_signed",
+        title: "DocuSign Documents All Signed",
+        description: "All parties have signed the transfer agreement",
+        status: "pending", // This would need to be determined from DocuSign status
+        details: "Awaiting signature completion",
+      },
+      {
+        id: "complete",
+        title: "Transfer Complete",
+        description: "All steps completed successfully",
+        status: transfer.status === "completed" ? "completed" : 
+                transfer.status === "cancelled" ? "cancelled" : "pending",
+        completedAt: transfer.status === "completed" ? transfer.updated_at : undefined,
+      },
+    ];
+
+    // If transfer is cancelled, mark remaining steps as cancelled
+    if (transfer.status === "cancelled") {
+      steps.forEach(step => {
+        if (step.status === "pending") {
+          step.status = "cancelled";
+        }
+      });
+    }
+
+    return steps;
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -259,7 +330,8 @@ const TransferDetails = () => {
     );
   }
 
-  const isAdmin = user?.email === "mishaberman@gmail.com";
+  const isAdmin = user?.email === "mishaberman@gmail.com" || user?.email === "austen.dewolf@hover.to";
+  const statusSteps = generateStatusSteps(transfer);
 
   return (
     <Layout>
@@ -279,12 +351,78 @@ const TransferDetails = () => {
           {getStatusBadge(transfer.status)}
         </div>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-6">
+        <Tabs defaultValue="status" className="w-full">
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="status">Status Tracker</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="logs">Activity Logs</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="status" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Transfer Progress Tracker
+                </CardTitle>
+                <CardDescription>
+                  Track the progress of your secure ticket transfer through each step
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StatusTracker 
+                  steps={statusSteps}
+                  currentStep={statusSteps.find(s => s.status === 'in-progress')?.id}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Quick summary cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Payment Status</p>
+                      <p className="text-2xl font-bold">
+                        {transfer.payment_received && transfer.payment_sent ? "Complete" : 
+                         transfer.payment_received ? "Received" : "Pending"}
+                      </p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Ticket Status</p>
+                      <p className="text-2xl font-bold">
+                        {transfer.ticket_received && transfer.ticket_sent ? "Complete" : 
+                         transfer.ticket_received ? "Received" : "Pending"}
+                      </p>
+                    </div>
+                    <Ticket className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Overall Status</p>
+                      <p className="text-2xl font-bold capitalize">{transfer.status}</p>
+                    </div>
+                    <CheckCircle className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

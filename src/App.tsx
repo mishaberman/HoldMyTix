@@ -25,6 +25,7 @@ const Callback = lazy(() => import("./pages/Callback"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
+const DocuSignCallback = lazy(() => import("./pages/DocuSignCallback"));
 
 // Import tempo routes
 let routes: any[] = [];
@@ -66,6 +67,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<ContactUs />} />
             <Route path="/callback" element={<Callback />} />
+            <Route path="/docusign-callback" element={<DocuSignCallback />} />
 
             {/* Protected routes */}
             <Route
