@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StatusTracker, StatusStep } from "@/components/ui/status-tracker";
+import { DocuSignStatus } from "@/components/ui/docusign-status";
 import {
   Calendar,
   MapPin,
@@ -38,6 +39,7 @@ const TransferDetails = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth0();
   const [transfer, setTransfer] = useState(null);
+  const [docusignAgreement, setDocusignAgreement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -63,6 +65,17 @@ const TransferDetails = () => {
       if (transferError) throw transferError;
       setTransfer(transferData);
 
+      // Fetch DocuSign agreement
+      const { data: docusignData, error: docusignError } = await supabase
+        .from("docusign_agreements")
+        .select("*")
+        .eq("transaction_id", transferId)
+        .single();
+
+      if (!docusignError && docusignData) {
+        setDocusignAgreement(docusignData);
+      }
+
       // Fetch related logs
       const { data: emailLogs, error: emailError } = await supabase
         .from("email_notifications")
@@ -70,11 +83,18 @@ const TransferDetails = () => {
         .eq("transaction_id", transferId)
         .order("created_at", { ascending: false });
 
-      const { data: docusignLogs, error: docusignError } = await supabase
+      const { data: docusignLogs, error: docusignLogsError } = await supabase
         .from("docusign_agreements")
         .select("*")
         .eq("transaction_id", transferId)
         .order("created_at", { ascending: false });
+
+      // Fetch DocuSign webhook logs
+      const { data: webhookLogs, error: webhookError } = await supabase
+        .from("docusign_webhook_logs")
+        .select("*")
+        .eq("envelope_id", docusignData?.envelope_id)
+        .order("processed_at", { ascending: false });
 
       // Combine logs
       const combinedLogs = [
@@ -97,6 +117,16 @@ const TransferDetails = () => {
             documentUrl: log.document_url,
             sellerStatus: log.seller_status,
             buyerStatus: log.buyer_status,
+          },
+        })),
+        ...(webhookLogs || []).map((log) => ({
+          ...log,
+          type: "webhook",
+          description: `DocuSign webhook: ${log.status}`,
+          created_at: log.processed_at,
+          details: {
+            envelopeId: log.envelope_id,
+            status: log.status,
           },
         })),
         {
@@ -201,6 +231,8 @@ const TransferDetails = () => {
         return "📧";
       case "docusign":
         return "📄";
+      case "webhook":
+        return "🔗";
       case "system":
         return "⚙️";
       case "admin":
@@ -211,7 +243,7 @@ const TransferDetails = () => {
   };
 
   // Generate status tracker steps
-  const generateStatusSteps = (transfer: any): StatusStep[] => {
+  const generateStatusSteps = (transfer: any, docusignAgreement: any): StatusStep[] => {
     if (!transfer) return [];
 
     const steps: StatusStep[] = [
@@ -266,8 +298,13 @@ const TransferDetails = () => {
         id: "docusign_signed",
         title: "DocuSign Documents All Signed",
         description: "All parties have signed the transfer agreement",
-        status: "pending", // This would need to be determined from DocuSign status
-        details: "Awaiting signature completion",
+        status: docusignAgreement?.status === "completed" ? "completed" : 
+                docusignAgreement?.status === "declined" || docusignAgreement?.status === "voided" ? "failed" :
+                docusignAgreement ? "in-progress" : "pending",
+        completedAt: docusignAgreement?.completed_at,
+        details: docusignAgreement ? 
+          `Seller: ${docusignAgreement.seller_status || 'pending'}, Buyer: ${docusignAgreement.buyer_status || 'pending'}` :
+          "Awaiting DocuSign agreement creation",
       },
       {
         id: "complete",
@@ -331,7 +368,7 @@ const TransferDetails = () => {
   }
 
   const isAdmin = user?.email === "mishaberman@gmail.com" || user?.email === "austen.dewolf@hover.to";
-  const statusSteps = generateStatusSteps(transfer);
+  const statusSteps = generateStatusSteps(transfer, docusignAgreement);
 
   return (
     <Layout>
@@ -352,9 +389,10 @@ const TransferDetails = () => {
         </div>
 
         <Tabs defaultValue="status" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-6">
+          <TabsList className="grid grid-cols-5 mb-6">
             <TabsTrigger value="status">Status Tracker</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="docusign">DocuSign</TabsTrigger>
             <TabsTrigger value="logs">Activity Logs</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
           </TabsList>
@@ -379,7 +417,7 @@ const TransferDetails = () => {
             </Card>
 
             {/* Quick summary cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -406,6 +444,20 @@ const TransferDetails = () => {
                       </p>
                     </div>
                     <Ticket className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">DocuSign Status</p>
+                      <p className="text-2xl font-bold capitalize">
+                        {docusignAgreement?.status || "Pending"}
+                      </p>
+                    </div>
+                    <FileText className="h-8 w-8 text-muted-foreground" />
                   </div>
                 </CardContent>
               </Card>
@@ -607,6 +659,13 @@ const TransferDetails = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="docusign" className="space-y-6">
+            <DocuSignStatus 
+              agreement={docusignAgreement}
+              transfer={transfer}
+            />
+          </TabsContent>
+
           <TabsContent value="logs" className="space-y-4">
             <Card>
               <CardHeader>
@@ -659,6 +718,12 @@ const TransferDetails = () => {
                             )}
                             {log.details.price && (
                               <p>Amount: ${log.details.price.toFixed(2)}</p>
+                            )}
+                            {log.details.sellerStatus && (
+                              <p>Seller Status: {log.details.sellerStatus}</p>
+                            )}
+                            {log.details.buyerStatus && (
+                              <p>Buyer Status: {log.details.buyerStatus}</p>
                             )}
                           </div>
                         )}
@@ -745,6 +810,14 @@ const TransferDetails = () => {
                       <p className="font-medium">Expiration:</p>
                       <p className="text-muted-foreground">
                         {new Date(transfer.expiration_time).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {docusignAgreement && (
+                    <div>
+                      <p className="font-medium">DocuSign Envelope:</p>
+                      <p className="text-muted-foreground text-xs">
+                        {docusignAgreement.envelope_id}
                       </p>
                     </div>
                   )}

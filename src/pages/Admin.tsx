@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Loader2, Eye, Trash2, RefreshCw } from "lucide-react";
+import { Loader2, Eye, Trash2, RefreshCw, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Admin = () => {
@@ -20,6 +20,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const [adminStats, setAdminStats] = useState(null);
   const [allTransfers, setAllTransfers] = useState([]);
+  const [webhookLogs, setWebhookLogs] = useState([]);
   const [loadingAdminData, setLoadingAdminData] = useState(false);
   const [error, setError] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -99,6 +100,8 @@ const Admin = () => {
       fetchAdminData();
       if (activeView === "events") {
         fetchTicketmasterEvents();
+      } else if (activeView === "webhooks") {
+        fetchWebhookLogs();
       }
     }
   }, [user, isAuthenticated, navigate, activeView]);
@@ -157,6 +160,25 @@ const Admin = () => {
     } catch (error) {
       console.error("Error fetching Ticketmaster events:", error);
       setError("Failed to load Ticketmaster events.");
+    } finally {
+      setLoadingAdminData(false);
+    }
+  };
+
+  const fetchWebhookLogs = async () => {
+    setLoadingAdminData(true);
+    try {
+      const { data, error } = await supabase
+        .from("docusign_webhook_logs")
+        .select("*")
+        .order("processed_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setWebhookLogs(data || []);
+    } catch (error) {
+      console.error("Error fetching webhook logs:", error);
+      setError("Failed to load webhook logs.");
     } finally {
       setLoadingAdminData(false);
     }
@@ -409,7 +431,9 @@ const Admin = () => {
               onClick={() =>
                 activeView === "transfers"
                   ? fetchAdminData()
-                  : fetchTicketmasterEvents()
+                  : activeView === "events"
+                  ? fetchTicketmasterEvents()
+                  : fetchWebhookLogs()
               }
               variant="outline"
             >
@@ -450,6 +474,13 @@ const Admin = () => {
             onClick={() => setActiveView("events")}
           >
             Ticketmaster Events
+          </Button>
+          <Button
+            variant={activeView === "webhooks" ? "default" : "outline"}
+            onClick={() => setActiveView("webhooks")}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            DocuSign Webhooks
           </Button>
         </div>
 
@@ -498,6 +529,76 @@ const Admin = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* DocuSign Webhooks List */}
+        {activeView === "webhooks" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>DocuSign Webhook Logs</CardTitle>
+              <CardDescription>
+                Recent DocuSign Connect webhook events
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingAdminData ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading webhook logs...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {webhookLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="border rounded-lg p-4 hover:bg-gray-50"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold">
+                            Envelope: {log.envelope_id}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            Status: {log.status}
+                          </p>
+                        </div>
+                        <Badge variant="outline">
+                          {new Date(log.processed_at).toLocaleDateString()}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <p>
+                          <strong>Processed:</strong>{" "}
+                          {new Date(log.processed_at).toLocaleString()}
+                        </p>
+                        {log.raw_data && (
+                          <details className="mt-2">
+                            <summary className="cursor-pointer hover:text-primary">
+                              View Raw Data
+                            </summary>
+                            <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto max-h-40">
+                              {JSON.stringify(JSON.parse(log.raw_data), null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {webhookLogs.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">
+                        No webhook logs found.
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Webhook events will appear here when DocuSign sends
+                        status updates.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Transfers List */}
